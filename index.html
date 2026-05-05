@@ -3,15 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>守护一平方英寸 · 猎杀噪音</title>
+    <title>守护一平方英寸 · 动态寂静</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
-        body { background: #1a3f2c; min-height: 100vh; display: flex; justify-content: center; align-items: center; font-family: 'Segoe UI', 'PingFang SC', Roboto, sans-serif; padding: 16px; }
+        body { background: #1a3f2c; min-height: 100vh; display: flex; justify-content: center; align-items: center; font-family: system-ui, sans-serif; padding: 16px; }
         .game-container { background: #2c5e3a; border-radius: 48px; padding: 16px; box-shadow: 0 20px 35px rgba(0,0,0,0.4); }
         canvas { display: block; margin: 0 auto; border-radius: 28px; box-shadow: 0 8px 20px rgba(0,0,0,0.3); cursor: crosshair; background: #3c6e47; width: 100%; height: auto; }
         .info-panel { display: flex; justify-content: space-between; align-items: baseline; padding: 12px 24px 8px 24px; color: #f9f1cf; font-weight: bold; text-shadow: 1px 1px 0 #1e3a2a; }
-        .score-box, .timer-box { background: #1e3a2a; padding: 8px 20px; border-radius: 60px; font-size: 1.6rem; backdrop-filter: blur(4px); }
-        .score-box span, .timer-box span { font-size: 0.9rem; margin-right: 8px; }
+        .score-box, .timer-box { background: #1e3a2a; padding: 8px 20px; border-radius: 60px; font-size: 1.6rem; backdrop-filter: blur(4px); transition: all 0.1s; }
         .start-screen, .end-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); display: flex; justify-content: center; align-items: center; z-index: 100; }
         .card { background: #fff9ef; max-width: 340px; width: 80%; border-radius: 48px; padding: 32px 24px; text-align: center; box-shadow: 0 25px 40px rgba(0,0,0,0.5); border: 1px solid #e0c8a0; }
         .card h1 { font-size: 2rem; color: #2c5e2e; margin-bottom: 12px; }
@@ -34,7 +33,7 @@
 <div id="startScreen" class="start-screen">
     <div class="card">
         <h1>🌿 守护一平方英寸</h1>
-        <p>点击自然声 <span style="background:#4caf50; color:white; padding:2px 10px; border-radius:20px;">➕1</span> &nbsp;&nbsp;避开噪音 <span style="background:#f44336; color:white; padding:2px 10px; border-radius:20px;">➖1</span><br>60秒内守护中央的寂静之地</p>
+        <p>点击自然声 <span style="background:#4caf50; color:white; padding:2px 10px; border-radius:20px;">➕1</span> &nbsp;&nbsp;避开噪音 <span style="background:#f44336; color:white; padding:2px 10px; border-radius:20px;">➖1</span><br>⚠️ 噪音触碰到中心也会扣分！<br>你的分数越高，世界越宁静 🌱</p>
         <button class="btn" id="startBtn">🎧 开始守护</button>
         <p style="font-size:12px; margin-top:16px;">🎨 灵感 · 戈登·汉普顿《一平方英寸的寂静》</p>
     </div>
@@ -49,7 +48,7 @@
     </div>
 </div>
 
-<div class="footer-credit">🎨 图标可自行替换 assets/icons/*.png | 非商用学习项目</div>
+<div class="footer-credit">🎨 图标可替换 | 动态音效 | 触碰中心机制</div>
 
 <script>
 (function(){
@@ -65,13 +64,15 @@
     let items = [];
     let spawnCounter = 0;
     const SPAWN_FRAMES = 18;
-    const MOVE_SPEED = 2.2;
+    const MOVE_SPEED = 2.3;
     const centerX = canvas.width/2, centerY = canvas.height/2, centerRadius = 58;
     
-    // ---------- 背景音乐 (简单合成，无需外部文件) ----------
-    let bgmSource = null;
-    let bgmGain = null;
+    // ---------- 音频 ----------
     let audioCtx = null;
+    let bgmOsc = null;
+    let bgmGain = null;
+    let bgmInterval = null;
+    let naturalTickInterval = null;  // 动态自然声背景
     
     function initAudio() {
         if (!audioCtx && window.AudioContext) {
@@ -79,8 +80,8 @@
         }
     }
     
-    // 播放简单蜂鸣音效
-    function playShortBeep(freq, dur) {
+    // 播放动态音效 (type: 'natural' 或 'noise')
+    function playDynamicSound(type) {
         if (!audioCtx) initAudio();
         if (!audioCtx) return;
         try {
@@ -89,66 +90,79 @@
             const gain = audioCtx.createGain();
             osc.connect(gain);
             gain.connect(audioCtx.destination);
-            osc.frequency.value = freq;
-            gain.gain.value = 0.2;
-            osc.start();
-            gain.gain.exponentialRampToValueAtTime(0.00001, now + dur);
-            osc.stop(now + dur);
+            
+            if (type === 'natural') {
+                // 自然声：频率随分数升高 (440 ~ 880)，音量随分数升高 (0.1 ~ 0.6)
+                let freq = 440 + Math.min(440, Math.max(0, score * 3));
+                let volume = 0.12 + Math.min(0.5, score / 80);
+                osc.frequency.value = freq;
+                gain.gain.value = volume;
+                osc.start();
+                gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.25);
+                osc.stop(now + 0.25);
+            } else {
+                // 噪音：频率随分数升高而降低 (800 ~ 200)，音量随分数升高而降低 (0.3 ~ 0.02)
+                let freq = Math.max(200, 800 - Math.min(600, score * 5));
+                let volume = Math.max(0.03, 0.3 - score / 70);
+                osc.frequency.value = freq;
+                gain.gain.value = volume;
+                osc.start();
+                gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.2);
+                osc.stop(now + 0.2);
+            }
         } catch(e) {}
     }
     
-    // 启动循环背景音乐（自然风，带滤波器软化）
-    let bgmInterval = null;
-    function startBGM() {
+    // 背景音乐：动态自然滴答声 (分数越高，间隔越短，声音越清脆)
+    function startDynamicBGM() {
         if (!audioCtx) initAudio();
         if (!audioCtx) return;
-        // 如果已经有背景音乐在播放，先停止
         stopBGM();
-        // 使用振荡器 + 噪音混合会很复杂，这里采用简单的低频正弦波模拟自然嗡鸣，+ 随机溪流声
-        // 为了简单且不依赖外部文件，我们用 setInterval 播放轻柔的“水滴”式背景，不会太烦人
-        // 更优雅：播放一个持续的 sine 波形，音量极低
+        // 持续的低频氛围 (轻柔)
         try {
-            const now = audioCtx.currentTime;
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.type = 'sine';
-            osc.frequency.value = 140; // 低频柔和
-            gain.gain.value = 0.08;
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            osc.start();
-            // 持续到游戏停止
-            bgmSource = { osc, gain };
-            // 再加一个随机滴答（模拟自然声）的定时器
-            bgmInterval = setInterval(() => {
+            bgmOsc = audioCtx.createOscillator();
+            bgmGain = audioCtx.createGain();
+            bgmOsc.type = 'sine';
+            bgmOsc.frequency.value = 100;
+            bgmGain.gain.value = 0.06;
+            bgmOsc.connect(bgmGain);
+            bgmGain.connect(audioCtx.destination);
+            bgmOsc.start();
+        } catch(e) {}
+        
+        // 动态自然间隔滴答
+        function scheduleNaturalTick() {
+            if (!gameRunning) return;
+            let intervalMs = Math.max(800, 3000 - Math.min(2500, score * 20));
+            if (naturalTickInterval) clearTimeout(naturalTickInterval);
+            naturalTickInterval = setTimeout(() => {
                 if (!gameRunning) return;
-                if (audioCtx && Math.random() < 0.3) {
+                if (audioCtx) {
+                    const now = audioCtx.currentTime;
                     const tickOsc = audioCtx.createOscillator();
                     const tickGain = audioCtx.createGain();
-                    tickOsc.frequency.value = 800 + Math.random() * 400;
-                    tickGain.gain.value = 0.03;
+                    let freq = 800 + Math.min(600, score * 4);
+                    let vol = 0.04 + Math.min(0.2, score / 100);
+                    tickOsc.frequency.value = freq;
+                    tickGain.gain.value = vol;
                     tickOsc.connect(tickGain);
                     tickGain.connect(audioCtx.destination);
                     tickOsc.start();
-                    tickGain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.4);
-                    tickOsc.stop(audioCtx.currentTime + 0.4);
+                    tickGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.35);
+                    tickOsc.stop(now + 0.35);
                 }
-            }, 2200);
-        } catch(e) {}
+                scheduleNaturalTick();
+            }, intervalMs);
+        }
+        scheduleNaturalTick();
     }
     
     function stopBGM() {
-        if (bgmSource && bgmSource.osc) {
-            try { bgmSource.osc.stop(); } catch(e) {}
-            bgmSource = null;
-        }
-        if (bgmInterval) {
-            clearInterval(bgmInterval);
-            bgmInterval = null;
-        }
+        if (bgmOsc) { try { bgmOsc.stop(); } catch(e) {} bgmOsc = null; }
+        if (naturalTickInterval) { clearTimeout(naturalTickInterval); naturalTickInterval = null; }
     }
     
-    // ----- 临时图标 (用 canvas emoji，后续可替换真实图片)-----
+    // ----- 图标生成 (emoji 图标) -----
     function createEmojiIcon(emoji, bgColor) {
         const size = 56;
         const offCanvas = document.createElement('canvas');
@@ -194,20 +208,58 @@
         for(let i=items.length-1;i>=0;i--){
             const it=items[i];
             it.x+=it.vx; it.y+=it.vy;
+            // 碰撞中心检测
+            const centerDist = Math.hypot(it.x + it.size/2 - centerX, it.y + it.size/2 - centerY);
+            if (centerDist < centerRadius + it.size/2) {
+                // 触碰到中心圆圈
+                if (it.type === 'natural') {
+                    score++;
+                    document.getElementById('scoreValue').innerText = score;
+                    playDynamicSound('natural'); // 自然声触碰也播放正面音效
+                } else {
+                    score--;
+                    document.getElementById('scoreValue').innerText = score;
+                    playDynamicSound('noise');
+                    // 短暂红色闪烁效果在绘制时做
+                }
+                items.splice(i,1);
+                continue;
+            }
+            // 超出边界移除
             const margin=150;
             if(it.x+it.size<-margin || it.x-it.size>canvas.width+margin || it.y+it.size<-margin || it.y-it.size>canvas.height+margin) items.splice(i,1);
         }
     }
     
-    function drawCenter() {
+    function drawCenter(flashRed) {
         ctx.beginPath();
         ctx.arc(centerX, centerY, centerRadius, 0, Math.PI*2);
-        ctx.fillStyle="#f4e3b1"; ctx.fill();
-        ctx.strokeStyle="#c9a87b"; ctx.lineWidth=3; ctx.stroke();
-        ctx.fillStyle="#5d3a1a"; ctx.font="bold 18px 'Segoe UI'"; ctx.textAlign="center"; ctx.textBaseline="middle";
+        let fillColor = "#f4e3b1";
+        if (flashRed) fillColor = "#e67e22";
+        ctx.fillStyle = fillColor;
+        ctx.fill();
+        ctx.strokeStyle = "#c9a87b";
+        ctx.lineWidth = 3;
+        ctx.stroke();
+        ctx.fillStyle = "#5d3a1a";
+        ctx.font = "bold 18px 'Segoe UI'";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
         ctx.fillText("🌿 寂静地", centerX, centerY);
-        ctx.beginPath(); ctx.arc(centerX, centerY, centerRadius+4, 0, Math.PI*2);
-        ctx.strokeStyle="#ffecb3"; ctx.lineWidth=1.5; ctx.stroke();
+        // 光环：分数越高越亮
+        let glowAlpha = Math.min(0.6, Math.abs(score)/150);
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, centerRadius+8, 0, Math.PI*2);
+        ctx.fillStyle = `rgba(255, 235, 150, ${glowAlpha})`;
+        ctx.fill();
+    }
+    
+    let flashCenter = false;
+    let flashTimer = null;
+    function triggerCenterFlash() {
+        flashCenter = true;
+        if (flashTimer) clearTimeout(flashTimer);
+        flashTimer = setTimeout(() => { flashCenter = false; }, 150);
     }
     
     function drawItems() { for(const it of items) ctx.drawImage(it.img, it.x, it.y, it.size, it.size); }
@@ -220,8 +272,15 @@
         for(let i=items.length-1;i>=0;i--){
             const it=items[i];
             if(canvasX>=it.x && canvasX<=it.x+it.size && canvasY>=it.y && canvasY<=it.y+it.size){
-                if(it.type==='natural'){ score++; document.getElementById('scoreValue').innerText=score; playShortBeep(560,0.12); }
-                else{ score--; document.getElementById('scoreValue').innerText=score; playShortBeep(320,0.15); }
+                if(it.type==='natural'){
+                    score++;
+                    playDynamicSound('natural');
+                } else {
+                    score--;
+                    playDynamicSound('noise');
+                    triggerCenterFlash();
+                }
+                document.getElementById('scoreValue').innerText = score;
                 items.splice(i,1);
                 break;
             }
@@ -262,7 +321,7 @@
             if(spawnCounter>=SPAWN_FRAMES){ spawnCounter=0; spawnItem(); if(items.length>42) items.splice(0,10); }
             ctx.clearRect(0,0,canvas.width,canvas.height);
             drawItems();
-            drawCenter();
+            drawCenter(flashCenter);
             animationId=requestAnimationFrame(frame);
         }
         frame();
@@ -278,9 +337,8 @@
             else{ timeLeft--; document.getElementById('timerValue').innerText=timeLeft; }
         },1000);
         startGameLoop();
-        // 启动背景音乐 (需要在用户手势下 resume AudioContext)
         if(audioCtx && audioCtx.state==='suspended') audioCtx.resume();
-        startBGM();
+        startDynamicBGM();
     }
     
     function attachEvents(){
@@ -307,7 +365,7 @@
     
     function drawIdle(){
         ctx.clearRect(0,0,canvas.width,canvas.height);
-        drawCenter();
+        drawCenter(false);
         ctx.fillStyle="#ffffffcc"; ctx.font="18px sans-serif"; ctx.textAlign="center";
         ctx.fillText("点击「开始守护」", centerX, centerY-70);
     }
@@ -317,7 +375,6 @@
         attachEvents();
         initUI();
         drawIdle();
-        // 预激活 AudioContext 但保持挂起，等待用户点击开始按钮时恢复
         if(audioCtx) audioCtx.suspend();
     }
     init();
