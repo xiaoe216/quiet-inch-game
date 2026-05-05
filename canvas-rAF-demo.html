@@ -1,0 +1,22 @@
+      // 中央圆
+      ctx.beginPath();
+      ctx.arc(cx, cy, circleR, 0, Math.PI * 2);
+      ctx.fillStyle = "#3d9df5";
+      ctx.fill();
+      ctx.strokeStyle = "#7ec8ff";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      // 方块（从右向左）
+      ctx.fillStyle = "#f5a623";
+      ctx.fillRect(squareX, cy - squareSize / 2, squareSize, squareSize);
+      squareX -= speed;
+      // 移出左侧后从右侧重新进入，形成循环
+      if (squareX < -squareSize) {
+        squareX = canvas.width + squareSize;
+      }
+      requestAnimationFrame(draw);
+    }
+    requestAnimationFrame(draw);
+  </script>
+</body>
+</html>
