@@ -3,127 +3,156 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>守护一平方英寸 · 自然意志</title>
+    <title>守护一平方英寸 · 手机版</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
-        body { 
-            background: #1a3f2c; 
-            min-height: 100vh; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            font-family: 'Segoe UI', 'PingFang SC', Roboto, sans-serif; 
-            padding: 12px;
+        * {
             margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
         }
-        .game-container { 
-            background: #2c5e3a; 
-            border-radius: 36px; 
-            padding: 12px; 
-            box-shadow: 0 20px 35px rgba(0,0,0,0.4); 
+
+        body {
+            background: #1a3f2c;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: system-ui, 'Segoe UI', 'PingFang SC', Roboto, sans-serif;
+            padding: 12px;
+        }
+
+        .game-container {
+            background: #2c5e3a;
+            border-radius: 32px;
+            padding: 12px;
+            box-shadow: 0 20px 35px rgba(0,0,0,0.4);
             width: 100%;
             max-width: 100%;
         }
-        canvas { 
-            display: block; 
-            margin: 0 auto; 
-            border-radius: 24px; 
-            box-shadow: 0 8px 20px rgba(0,0,0,0.3); 
-            cursor: crosshair; 
-            background: #3c6e47; 
-            width: 100%; 
-            height: auto; 
+
+        canvas {
+            display: block;
+            margin: 0 auto;
+            border-radius: 24px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+            cursor: crosshair;
+            background: #3c6e47;
             touch-action: manipulation;
+            width: 100%;
+            height: auto;
         }
-        .info-panel { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            flex-wrap: wrap; 
-            gap: 8px; 
-            padding: 8px 12px; 
-            color: #f9f1cf; 
-            font-weight: bold; 
-            text-shadow: 1px 1px 0 #1e3a2a; 
+
+        .info-panel {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px 12px 12px;
+            color: #f9f1cf;
+            font-weight: bold;
+            text-shadow: 1px 1px 0 #1e3a2a;
         }
-        .score-box, .timer-box { 
-            background: #1e3a2a; 
-            padding: 6px 14px; 
-            border-radius: 40px; 
-            font-size: 1.2rem; 
-            white-space: nowrap; 
+
+        .score-box, .timer-box {
+            background: #1e3a2a;
+            padding: 8px 18px;
+            border-radius: 60px;
+            font-size: 1.4rem;
             backdrop-filter: blur(4px);
         }
-        .score-box span, .timer-box span { 
-            font-size: 0.8rem; 
-            margin-right: 5px; 
+
+        .score-box span, .timer-box span {
+            font-size: 0.8rem;
+            margin-right: 6px;
         }
-        .start-screen, .end-screen { 
-            position: fixed; 
-            top: 0; 
-            left: 0; 
-            width: 100%; 
-            height: 100%; 
-            background: rgba(0,0,0,0.85); 
-            backdrop-filter: blur(8px); 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            z-index: 100; 
+
+        /* 开始/结束弹窗 - 手机友好 */
+        .start-screen, .end-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(8px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
         }
-        .card { 
-            background: #fff9ef; 
-            max-width: 85%; 
-            width: 320px; 
-            border-radius: 48px; 
-            padding: 20px 18px; 
-            text-align: center; 
-            box-shadow: 0 25px 40px rgba(0,0,0,0.5); 
-            border: 1px solid #e0c8a0; 
+
+        .card {
+            background: #fff9ef;
+            width: 85%;
+            max-width: 320px;
+            border-radius: 48px;
+            padding: 28px 20px;
+            text-align: center;
+            box-shadow: 0 25px 40px rgba(0,0,0,0.5);
+            border: 1px solid #e0c8a0;
         }
-        .card h1 { font-size: 1.6rem; color: #2c5e2e; margin-bottom: 10px; }
-        .card p { color: #4a3a2a; margin-bottom: 16px; line-height: 1.4; font-size: 0.85rem; }
-        .rule-badge { 
-            background: #e6ddcc; 
-            border-radius: 32px; 
-            padding: 8px; 
-            margin: 12px 0; 
-            font-size: 0.75rem; 
-            text-align: left; 
+
+        .card h1 {
+            font-size: 1.8rem;
+            color: #2c5e2e;
+            margin-bottom: 12px;
         }
-        .rule-badge span { display: inline-block; margin: 4px 0; }
-        .btn { 
-            background: #4f8a4b; 
-            border: none; 
-            color: white; 
-            font-size: 1.2rem; 
-            font-weight: bold; 
-            padding: 8px 20px; 
-            border-radius: 60px; 
-            cursor: pointer; 
-            transition: 0.1s linear; 
-            box-shadow: 0 4px 0 #2c5e2e; 
+
+        .card p {
+            color: #4a3a2a;
+            margin-bottom: 20px;
+            line-height: 1.4;
+            font-size: 0.9rem;
+        }
+
+        .rule-badge {
+            background: #e6ddcc;
+            border-radius: 32px;
+            padding: 12px;
+            margin: 16px 0;
+            font-size: 0.85rem;
+            text-align: left;
+        }
+
+        .rule-badge span {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .btn {
+            background: #4f8a4b;
+            border: none;
+            color: white;
+            font-size: 1.3rem;
+            font-weight: bold;
+            padding: 12px 24px;
+            border-radius: 60px;
+            cursor: pointer;
+            transition: 0.1s linear;
+            box-shadow: 0 4px 0 #2c5e2e;
             margin-top: 8px;
-            width: auto;
-            display: inline-block;
+            width: 80%;
         }
-        .btn:active { transform: translateY(2px); box-shadow: 0 1px 0 #2c5e2e; }
-        .footer-credit { 
-            position: fixed; 
-            bottom: 8px; 
-            right: 12px; 
-            background: rgba(0,0,0,0.5); 
-            color: #ddd; 
-            font-size: 9px; 
-            padding: 3px 8px; 
-            border-radius: 20px; 
-            z-index: 200; 
-            pointer-events: none; 
+
+        .btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 1px 0 #2c5e2e;
         }
-        @media (max-width: 600px) {
-            .score-box, .timer-box { font-size: 1rem; padding: 4px 10px; }
-            .card h1 { font-size: 1.4rem; }
-            .btn { font-size: 1rem; padding: 6px 16px; }
+
+        .footer-credit {
+            position: fixed;
+            bottom: 8px;
+            right: 12px;
+            background: rgba(0,0,0,0.5);
+            color: #ddd;
+            font-size: 9px;
+            padding: 3px 8px;
+            border-radius: 20px;
+            z-index: 200;
+            pointer-events: none;
         }
     </style>
 </head>
@@ -140,12 +169,12 @@
     <div class="card">
         <h1>🌿 守护一平方英寸</h1>
         <div class="rule-badge">
-            <span>🟢 <strong>自然声</strong> → 让它飞入中心 <span style="color:green;">+1</span> &nbsp;&nbsp; ❌ 点击它则 <span style="color:red;">-1</span></span><br>
-            <span>🔴 <strong>噪音</strong> → 点击它拦截 <span style="color:darkgreen;">0分</span> &nbsp;&nbsp; ⚠️ 让噪音进入中心则 <span style="color:red;">-1</span></span>
+            <span>🟢 <strong>自然声</strong> → 让它飞入中心 <span style="color:green;">+1</span><br>❌ 点击它则 <span style="color:red;">-1</span></span>
+            <span>🔴 <strong>噪音</strong> → 点击它拦截 <span style="color:darkgreen;">0分</span><br>⚠️ 让噪音进入中心则 <span style="color:red;">-1</span></span>
         </div>
         <p>看见红色<strong>必须点掉</strong>，看见绿色<strong>千万别点</strong>，让它飘入中心。</p>
         <button class="btn" id="startBtn">🎧 开始守护</button>
-        <p style="font-size:10px; margin-top:12px;">🎨 灵感 · 戈登·汉普顿《一平方英寸的寂静》</p>
+        <p style="font-size:10px; margin-top:16px;">🎨 灵感 · 戈登·汉普顿《一平方英寸的寂静》</p>
     </div>
 </div>
 
@@ -154,7 +183,7 @@
         <h1>🌱 你的寂静指数</h1>
         <p id="endMessage">得分 XX</p>
         <button class="btn" id="restartBtn">🔄 再次守护</button>
-        <p id="bookQuote" style="font-style:italic; margin-top:16px; font-size:11px;"></p>
+        <p id="bookQuote" style="font-style:italic; margin-top:16px; font-size:12px;"></p>
     </div>
 </div>
 
@@ -162,17 +191,90 @@
 
 <script>
 (function(){
+    // ---------- 1. 获取元素 ----------
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
     
-    // 动态尺寸变量
-    let canvasWidth = 0, canvasHeight = 0;
-    let centerX = 0, centerY = 0, centerRadius = 0;
-    let itemSize = 0;
-    let moveSpeed = 0;
-    let spawnFrameInterval = 18; // 帧间隔固定，生成频率随帧率稳定
+    // ---------- 2. 手机全尺寸适配 ----------
+    let canvasWidth, canvasHeight;
+    let centerX, centerY, centerRadius;
+    let itemSize;
+    let moveSpeed;
+    const SPAWN_FRAMES = 18;  // 生成频率
     
-    // 游戏状态
+    function setCanvasSize() {
+        // 获取实际可用宽度（减去容器 padding）
+        const container = canvas.parentElement;
+        let maxWidth = Math.min(window.innerWidth - 24, 500);  // 手机不超500px，保证手指区域
+        // 也可以直接取窗口宽度减边距
+        let width = window.innerWidth - 24;
+        if (width > 500) width = 500;   // 电脑上最大500px，居中
+        let height = width * 1.2;        // 高度略宽，适合纵向
+        // 防超出屏幕高度
+        if (height > window.innerHeight - 80) {
+            height = window.innerHeight - 80;
+            width = height / 1.2;
+        }
+        canvas.width = width;
+        canvas.height = height;
+        canvasWidth = width;
+        canvasHeight = height;
+        
+        // 根据画布大小动态计算所有游戏参数
+        centerX = canvasWidth / 2;
+        centerY = canvasHeight / 2;
+        centerRadius = Math.min(canvasWidth * 0.12, 70);  // 中心圆占宽度12%，上限70
+        itemSize = Math.min(canvasWidth * 0.13, 75);      // 图标大小占13%，方便点按
+        moveSpeed = canvasWidth / 380;                     // 移动速度与宽度关联，保证横穿时间约1.5秒
+        
+        console.log(`尺寸: ${canvasWidth}x${canvasHeight}, 图标:${itemSize}, 速度:${moveSpeed}`);
+    }
+    
+    // 监听屏幕旋转，重新设置画布大小并重置游戏界面（如果未开始）
+    window.addEventListener('resize', () => {
+        if (!gameRunning) {
+            setCanvasSize();
+            rebuildIcons();   // 重新生成图标适应新尺寸
+            drawIdle();
+        }
+    });
+    
+    // ---------- 3. 图标生成（基于当前 itemSize 动态绘制，保证清晰）----------
+    let naturalIcons = [], noiseIcons = [];
+    
+    function createEmojiIcon(emoji, bgColor, size) {
+        const offCanvas = document.createElement('canvas');
+        offCanvas.width = size;
+        offCanvas.height = size;
+        const offCtx = offCanvas.getContext('2d');
+        offCtx.fillStyle = bgColor;
+        offCtx.beginPath();
+        offCtx.arc(size/2, size/2, size/2 - 4, 0, Math.PI*2);
+        offCtx.fill();
+        offCtx.fillStyle = 'white';
+        offCtx.font = `${size * 0.48}px "Segoe UI Emoji", "Apple Color Emoji"`;
+        offCtx.textAlign = 'center';
+        offCtx.textBaseline = 'middle';
+        offCtx.fillText(emoji, size/2, size/2);
+        const img = new Image();
+        img.src = offCanvas.toDataURL();
+        return img;
+    }
+    
+    function rebuildIcons() {
+        const sz = itemSize;
+        const emojisNatural = ['🦗','🐸','💧','🐦','🍃'];
+        const emojisNoise = ['✈️','📱','🚗','🏗️','🔊'];
+        naturalIcons = emojisNatural.map(e => createEmojiIcon(e, '#2e7d32', sz));
+        noiseIcons = emojisNoise.map(e => createEmojiIcon(e, '#b71c1c', sz));
+    }
+    
+    function getRandomIcon(isNatural) {
+        const arr = isNatural ? naturalIcons : noiseIcons;
+        return arr[Math.floor(Math.random() * arr.length)];
+    }
+    
+    // ---------- 4. 游戏状态 ----------
     let gameRunning = false;
     let score = 0;
     let timeLeft = 60;
@@ -180,57 +282,12 @@
     let items = [];
     let spawnCounter = 0;
     
-    // 音频相关
+    // 音频
     let audioCtx = null;
     let bgmOsc = null;
     let bgmGain = null;
     let naturalTickInterval = null;
     
-    // 辅助函数：更新画布尺寸并重新计算比例
-    function resizeCanvas() {
-        // 获取容器实际可用宽度
-        const container = canvas.parentElement;
-        const maxWidth = Math.min(window.innerWidth - 32, 800); // 最大逻辑宽度800，避免过大
-        let width = maxWidth;
-        let height = width * 0.75; // 保持 4:3 比例接近 800x600
-        // 如果高度超出视口，则按高度限制
-        if (height > window.innerHeight - 100) {
-            height = window.innerHeight - 100;
-            width = height / 0.75;
-        }
-        canvas.width = width;
-        canvas.height = height;
-        canvasWidth = width;
-        canvasHeight = height;
-        
-        // 重新计算游戏元素比例
-        centerX = canvasWidth / 2;
-        centerY = canvasHeight / 2;
-        centerRadius = Math.min(canvasWidth * 0.09, 70);  // 中心圆半径 约9%宽度，上限70px
-        itemSize = Math.min(canvasWidth * 0.1, 70);      // 图标尺寸 约10%宽度，上限70px，保证手指可点
-        moveSpeed = canvasWidth / 350;                   // 速度随宽度缩放，保持横穿时间约1.5秒
-        // 生成频率不调整，保持帧计数间隔
-        console.log(`Canvas: ${canvasWidth}x${canvasHeight}, 图标尺寸:${itemSize}, 速度:${moveSpeed}`);
-    }
-    
-    // 监听屏幕旋转和窗口大小变化
-    window.addEventListener('resize', () => {
-        if (!gameRunning) {
-            resizeCanvas();
-            drawIdle();
-        } else {
-            // 游戏运行时改变尺寸会导致坐标错乱，建议不动态调整，或者重新启动（复杂）
-            // 简单处理：如果游戏运行中旋转，重启？但体验不好，我们禁止resize时重新计算并清空items?
-            // 为安全，只调整画布大小但不清空物体，会造成位置错位，所以游戏中禁止自适应，只初始化前调整。
-            // 所以我们只在游戏未开始时resize。游戏中忽略，提示玩家不要旋转屏幕。
-            if(!gameRunning) {
-                resizeCanvas();
-                drawIdle();
-            }
-        }
-    });
-    
-    // 初始化音频
     function initAudio() {
         if (!audioCtx && window.AudioContext) {
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -320,64 +377,7 @@
         if (naturalTickInterval) { clearTimeout(naturalTickInterval); naturalTickInterval = null; }
     }
     
-    // 图标生成（使用 emoji 临时，可替换为图片）
-    function createEmojiIcon(emoji, bgColor) {
-        const size = itemSize;
-        const offCanvas = document.createElement('canvas');
-        offCanvas.width = size;
-        offCanvas.height = size;
-        const offCtx = offCanvas.getContext('2d');
-        offCtx.fillStyle = bgColor;
-        offCtx.beginPath();
-        offCtx.arc(size/2, size/2, size/2 - 4, 0, Math.PI*2);
-        offCtx.fill();
-        offCtx.fillStyle = 'white';
-        offCtx.font = `${size * 0.5}px "Segoe UI Emoji", "Apple Color Emoji"`;
-        offCtx.textAlign = 'center';
-        offCtx.textBaseline = 'middle';
-        offCtx.fillText(emoji, size/2, size/2);
-        const img = new Image();
-        img.src = offCanvas.toDataURL();
-        return img;
-    }
-    // 注意：图标尺寸依赖 itemSize，但 itemSize 在 resize 后确定。我们需要在游戏启动时重新生成图标？为简化，首次生成基于初始尺寸，以后不再动态变化。但为了手机适配，可以在每次 resize 后重新生成图标数组。为不复杂，我们让图标固定为逻辑尺寸64，但绘制时缩放？不如动态重绘。
-    // 更简单：图标不预先创建，而是在 spawnItem 时根据当前 itemSize 动态创建并缓存？会耗性能。好在 resize 只在游戏开始前发生。
-    let naturalIcons = [], noiseIcons = [];
-    function rebuildIcons() {
-        const size = itemSize;
-        function create(emoji, color) {
-            const offCanvas = document.createElement('canvas');
-            offCanvas.width = size;
-            offCanvas.height = size;
-            const offCtx = offCanvas.getContext('2d');
-            offCtx.fillStyle = color;
-            offCtx.beginPath();
-            offCtx.arc(size/2, size/2, size/2 - 4, 0, Math.PI*2);
-            offCtx.fill();
-            offCtx.fillStyle = 'white';
-            offCtx.font = `${size * 0.5}px "Segoe UI Emoji", "Apple Color Emoji"`;
-            offCtx.textAlign = 'center';
-            offCtx.textBaseline = 'middle';
-            offCtx.fillText(emoji, size/2, size/2);
-            const img = new Image();
-            img.src = offCanvas.toDataURL();
-            return img;
-        }
-        naturalIcons = [
-            create('🦗','#2e7d32'), create('🐸','#2e7d32'), create('💧','#2e7d32'),
-            create('🐦','#2e7d32'), create('🍃','#2e7d32')
-        ];
-        noiseIcons = [
-            create('✈️','#b71c1c'), create('📱','#b71c1c'), create('🚗','#b71c1c'),
-            create('🏗️','#b71c1c'), create('🔊','#b71c1c')
-        ];
-    }
-    
-    function getRandomIcon(isNatural) {
-        if (isNatural) return naturalIcons[Math.floor(Math.random() * naturalIcons.length)];
-        else return noiseIcons[Math.floor(Math.random() * noiseIcons.length)];
-    }
-    
+    // ---------- 物体生成与移动 ----------
     function spawnItem() {
         if (!gameRunning) return;
         const isNatural = Math.random() < 0.6;
@@ -402,6 +402,7 @@
             const it = items[i];
             it.x += it.vx;
             it.y += it.vy;
+            // 碰撞中心圆（简单包围盒距离）
             const centerDist = Math.hypot(it.x + it.size/2 - centerX, it.y + it.size/2 - centerY);
             if (centerDist < centerRadius + it.size/2) {
                 if (it.type === 'natural') {
@@ -418,7 +419,8 @@
                 items.splice(i,1);
                 continue;
             }
-            const margin = 150;
+            // 超出边界移除
+            const margin = 200;
             if (it.x + it.size < -margin || it.x - it.size > canvasWidth + margin ||
                 it.y + it.size < -margin || it.y - it.size > canvasHeight + margin) {
                 items.splice(i,1);
@@ -447,13 +449,14 @@
         ctx.lineWidth = 3;
         ctx.stroke();
         ctx.fillStyle = "#5d3a1a";
-        ctx.font = `bold ${Math.max(14, centerRadius * 0.3)}px "Segoe UI"`;
+        ctx.font = `bold ${Math.max(14, centerRadius * 0.28)}px "Segoe UI"`;
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
         ctx.fillText("🌿 寂静地", centerX, centerY);
-        let glowAlpha = Math.min(0.6, Math.abs(score)/150);
+        // 光晕效果
+        let glowAlpha = Math.min(0.5, Math.abs(score) / 150);
         ctx.beginPath();
-        ctx.arc(centerX, centerY, centerRadius+8, 0, Math.PI*2);
+        ctx.arc(centerX, centerY, centerRadius + 6, 0, Math.PI*2);
         ctx.fillStyle = `rgba(255, 235, 150, ${glowAlpha})`;
         ctx.fill();
     }
@@ -464,6 +467,7 @@
         }
     }
     
+    // ---------- 交互 (触摸/鼠标) ----------
     function handleHit(clientX, clientY) {
         if (!gameRunning) return;
         const rect = canvas.getBoundingClientRect();
@@ -473,13 +477,15 @@
         const canvasY = (clientY - rect.top) * scaleY;
         for (let i = items.length-1; i >= 0; i--) {
             const it = items[i];
-            if (canvasX >= it.x && canvasX <= it.x + it.size && canvasY >= it.y && canvasY <= it.y + it.size) {
+            if (canvasX >= it.x && canvasX <= it.x + it.size &&
+                canvasY >= it.y && canvasY <= it.y + it.size) {
                 if (it.type === 'natural') {
                     score--;
                     document.getElementById('scoreValue').innerText = score;
                     playDynamicSound('natural_mistake');
                     triggerCenterFlash('natural');
                 } else {
+                    // 点击噪音 = 成功拦截，不扣分不加分
                     playDynamicSound('noise_hit');
                     triggerCenterFlash('noise');
                 }
@@ -489,6 +495,7 @@
         }
     }
     
+    // ---------- 游戏流程 ----------
     function endGame() {
         gameRunning = false;
         if (timerInterval) clearInterval(timerInterval);
@@ -523,7 +530,7 @@
             if (!gameRunning) return;
             updateItems();
             spawnCounter++;
-            if (spawnCounter >= spawnFrameInterval) {
+            if (spawnCounter >= SPAWN_FRAMES) {
                 spawnCounter = 0;
                 spawnItem();
                 if (items.length > 38) items.splice(0, 8);
@@ -556,6 +563,7 @@
         startDynamicBGM();
     }
     
+    // ---------- UI 事件绑定 ----------
     function attachEvents() {
         canvas.addEventListener('click', (e) => { e.preventDefault(); handleHit(e.clientX, e.clientY); });
         canvas.addEventListener('touchstart', (e) => {
@@ -573,15 +581,14 @@
         startBtn.addEventListener('click', () => {
             startDiv.style.display = 'none';
             endDiv.style.display = 'none';
-            // 重新确保尺寸（因为可能旋转过）
-            resizeCanvas();
+            setCanvasSize();       // 重新确保尺寸
             rebuildIcons();
             launchGame();
         });
         restartBtn.addEventListener('click', () => {
             endDiv.style.display = 'none';
             startDiv.style.display = 'none';
-            resizeCanvas();
+            setCanvasSize();
             rebuildIcons();
             launchGame();
         });
@@ -593,11 +600,12 @@
         ctx.fillStyle = "#ffffffcc";
         ctx.font = `bold ${Math.max(16, centerRadius * 0.3)}px sans-serif`;
         ctx.textAlign = "center";
-        ctx.fillText("点击「开始守护」", centerX, centerY - centerRadius - 10);
+        ctx.fillText("点击「开始守护」", centerX, centerY - centerRadius - 12);
     }
     
+    // ---------- 初始化 ----------
     function init() {
-        resizeCanvas();
+        setCanvasSize();
         rebuildIcons();
         initAudio();
         attachEvents();
@@ -605,6 +613,7 @@
         drawIdle();
         if (audioCtx) audioCtx.suspend();
     }
+    
     init();
 })();
 </script>
