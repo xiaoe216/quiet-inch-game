@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>守护一平方英寸 · 手机版</title>
+    <title>守护一平方英寸 · 自然意志</title>
     <style>
         * {
             margin: 0;
@@ -67,7 +67,7 @@
             margin-right: 6px;
         }
 
-        /* 开始/结束弹窗 - 手机友好 */
+        /* 规则弹窗优化 */
         .start-screen, .end-screen {
             position: fixed;
             top: 0;
@@ -85,9 +85,9 @@
         .card {
             background: #fff9ef;
             width: 85%;
-            max-width: 320px;
+            max-width: 340px;
             border-radius: 48px;
-            padding: 28px 20px;
+            padding: 28px 20px 32px;
             text-align: center;
             box-shadow: 0 25px 40px rgba(0,0,0,0.5);
             border: 1px solid #e0c8a0;
@@ -96,46 +96,66 @@
         .card h1 {
             font-size: 1.8rem;
             color: #2c5e2e;
-            margin-bottom: 12px;
+            margin-bottom: 16px;
+            letter-spacing: -0.3px;
         }
 
-        .card p {
-            color: #4a3a2a;
-            margin-bottom: 20px;
-            line-height: 1.4;
-            font-size: 0.9rem;
+        /* 规则区域 - 清爽卡片式 */
+        .rule-list {
+            background: #f4efdf;
+            border-radius: 32px;
+            padding: 16px 20px;
+            margin: 16px 0 20px;
+            text-align: left;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.02), 0 2px 4px rgba(0,0,0,0.05);
         }
 
-        .rule-badge {
-            .rule-badge {
-    background: #e6ddcc;
-    border-radius: 28px;
-    padding: 12px 16px;
-    margin: 12px 0;
-    font-size: 0.8rem;
-    line-height: 1.5;
-    text-align: left;
-}
-.rule-badge span {
-    display: block;
-    margin-bottom: 10px;
-}
-.rule-badge span:last-child {
-    margin-bottom: 0;
-}
-.card p {
-    <div class="rule-badge">
-    <span>🟢 <strong>自然声</strong> → 让它飞入中心 <span style="color:green;">+1</span> &nbsp; 点击则 <span style="color:red;">-1</span></span>
-    <span>🔴 <strong>噪音</strong> → 点击拦截 <span style="color:darkgreen;">0分</span> &nbsp; 飘入中心则 <span style="color:red;">-1</span></span>
-</div>
-}
-        }
-
-        .rule-badge span {
+        .rule-item {
             display: flex;
             align-items: center;
-            gap: 8px;
-            margin-bottom: 8px;
+            gap: 12px;
+            margin-bottom: 16px;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .rule-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .rule-icon {
+            font-size: 2rem;
+            width: 48px;
+            text-align: center;
+        }
+
+        .rule-text {
+            flex: 1;
+            color: #4a3a2a;
+        }
+
+        .rule-text strong {
+            color: #2c5e2e;
+        }
+
+        .rule-text .green {
+            color: #2e7d32;
+            font-weight: bold;
+        }
+
+        .rule-text .red {
+            color: #c62828;
+            font-weight: bold;
+        }
+
+        .extra-hint {
+            background: #e6ddcc;
+            border-radius: 28px;
+            padding: 12px;
+            font-size: 0.8rem;
+            color: #5d4a2e;
+            margin: 12px 0 8px;
+            text-align: center;
         }
 
         .btn {
@@ -149,8 +169,9 @@
             cursor: pointer;
             transition: 0.1s linear;
             box-shadow: 0 4px 0 #2c5e2e;
-            margin-top: 8px;
+            margin: 8px auto 0;
             width: 80%;
+            display: block;
         }
 
         .btn:active {
@@ -181,25 +202,43 @@
     <canvas id="gameCanvas"></canvas>
 </div>
 
+<!-- 开始界面 - 优化排版 -->
 <div id="startScreen" class="start-screen">
     <div class="card">
         <h1>🌿 守护一平方英寸</h1>
-        <div class="rule-badge">
-            <span>🟢 <strong>自然声</strong> → 让它飞入中心 <span style="color:green;">+1</span><br>❌ 点击它则 <span style="color:red;">-1</span></span>
-            <span>🔴 <strong>噪音</strong> → 点击它拦截 <span style="color:darkgreen;">0分</span><br>⚠️ 让噪音进入中心则 <span style="color:red;">-1</span></span>
+
+        <div class="rule-list">
+            <div class="rule-item">
+                <div class="rule-icon">🟢</div>
+                <div class="rule-text">
+                    <strong>自然声</strong> → 让它飞入中心<br>
+                    点击它会 <span class="red">-1</span> &nbsp;|&nbsp; 飞入中心 <span class="green">+1</span>
+                </div>
+            </div>
+            <div class="rule-item">
+                <div class="rule-icon">🔴</div>
+                <div class="rule-text">
+                    <strong>噪音</strong> → 点击它拦截<br>
+                    点击它 <span class="green">0分</span> &nbsp;|&nbsp; 飞入中心 <span class="red">-1</span>
+                </div>
+            </div>
         </div>
-        <p>看见红色<strong>必须点掉</strong>，看见绿色<strong>千万别点</strong>，让它飘入中心。</p>
+
+        <div class="extra-hint">
+            👆 看见红色<strong>必须点掉</strong> &nbsp;|&nbsp; 看见绿色<strong>千万别点</strong>
+        </div>
+
         <button class="btn" id="startBtn">🎧 开始守护</button>
-        <p style="font-size:10px; margin-top:16px;">🎨 灵感 · 戈登·汉普顿《一平方英寸的寂静》</p>
+        <p style="font-size: 10px; margin-top: 20px; color: #8b7a62;">🎨 灵感 · 戈登·汉普顿《一平方英寸的寂静》</p>
     </div>
 </div>
 
 <div id="endScreen" class="end-screen" style="display: none;">
     <div class="card">
         <h1>🌱 你的寂静指数</h1>
-        <p id="endMessage">得分 XX</p>
+        <p id="endMessage" style="font-size: 1.2rem; margin: 16px 0;">得分 XX</p>
         <button class="btn" id="restartBtn">🔄 再次守护</button>
-        <p id="bookQuote" style="font-style:italic; margin-top:16px; font-size:12px;"></p>
+        <p id="bookQuote" style="font-style:italic; margin-top: 20px; font-size: 11px; color: #7a684a;"></p>
     </div>
 </div>
 
@@ -216,17 +255,12 @@
     let centerX, centerY, centerRadius;
     let itemSize;
     let moveSpeed;
-    const SPAWN_FRAMES = 18;  // 生成频率
+    const SPAWN_FRAMES = 18;
     
     function setCanvasSize() {
-        // 获取实际可用宽度（减去容器 padding）
-        const container = canvas.parentElement;
-        let maxWidth = Math.min(window.innerWidth - 24, 500);  // 手机不超500px，保证手指区域
-        // 也可以直接取窗口宽度减边距
         let width = window.innerWidth - 24;
-        if (width > 500) width = 500;   // 电脑上最大500px，居中
-        let height = width * 1.2;        // 高度略宽，适合纵向
-        // 防超出屏幕高度
+        if (width > 500) width = 500;
+        let height = width * 1.2;
         if (height > window.innerHeight - 80) {
             height = window.innerHeight - 80;
             width = height / 1.2;
@@ -236,26 +270,22 @@
         canvasWidth = width;
         canvasHeight = height;
         
-        // 根据画布大小动态计算所有游戏参数
         centerX = canvasWidth / 2;
         centerY = canvasHeight / 2;
-        centerRadius = Math.min(canvasWidth * 0.12, 70);  // 中心圆占宽度12%，上限70
-        itemSize = Math.min(canvasWidth * 0.13, 75);      // 图标大小占13%，方便点按
-        moveSpeed = canvasWidth / 380;                     // 移动速度与宽度关联，保证横穿时间约1.5秒
-        
-        console.log(`尺寸: ${canvasWidth}x${canvasHeight}, 图标:${itemSize}, 速度:${moveSpeed}`);
+        centerRadius = Math.min(canvasWidth * 0.12, 70);
+        itemSize = Math.min(canvasWidth * 0.13, 75);
+        moveSpeed = canvasWidth / 380;
     }
     
-    // 监听屏幕旋转，重新设置画布大小并重置游戏界面（如果未开始）
     window.addEventListener('resize', () => {
         if (!gameRunning) {
             setCanvasSize();
-            rebuildIcons();   // 重新生成图标适应新尺寸
+            rebuildIcons();
             drawIdle();
         }
     });
     
-    // ---------- 3. 图标生成（基于当前 itemSize 动态绘制，保证清晰）----------
+    // ---------- 3. 图标生成（基于当前 itemSize）----------
     let naturalIcons = [], noiseIcons = [];
     
     function createEmojiIcon(emoji, bgColor, size) {
@@ -418,7 +448,6 @@
             const it = items[i];
             it.x += it.vx;
             it.y += it.vy;
-            // 碰撞中心圆（简单包围盒距离）
             const centerDist = Math.hypot(it.x + it.size/2 - centerX, it.y + it.size/2 - centerY);
             if (centerDist < centerRadius + it.size/2) {
                 if (it.type === 'natural') {
@@ -435,7 +464,6 @@
                 items.splice(i,1);
                 continue;
             }
-            // 超出边界移除
             const margin = 200;
             if (it.x + it.size < -margin || it.x - it.size > canvasWidth + margin ||
                 it.y + it.size < -margin || it.y - it.size > canvasHeight + margin) {
@@ -469,7 +497,6 @@
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
         ctx.fillText("🌿 寂静地", centerX, centerY);
-        // 光晕效果
         let glowAlpha = Math.min(0.5, Math.abs(score) / 150);
         ctx.beginPath();
         ctx.arc(centerX, centerY, centerRadius + 6, 0, Math.PI*2);
@@ -483,7 +510,7 @@
         }
     }
     
-    // ---------- 交互 (触摸/鼠标) ----------
+    // ---------- 交互 ----------
     function handleHit(clientX, clientY) {
         if (!gameRunning) return;
         const rect = canvas.getBoundingClientRect();
@@ -501,7 +528,6 @@
                     playDynamicSound('natural_mistake');
                     triggerCenterFlash('natural');
                 } else {
-                    // 点击噪音 = 成功拦截，不扣分不加分
                     playDynamicSound('noise_hit');
                     triggerCenterFlash('noise');
                 }
@@ -579,7 +605,7 @@
         startDynamicBGM();
     }
     
-    // ---------- UI 事件绑定 ----------
+    // ---------- UI 绑定 ----------
     function attachEvents() {
         canvas.addEventListener('click', (e) => { e.preventDefault(); handleHit(e.clientX, e.clientY); });
         canvas.addEventListener('touchstart', (e) => {
@@ -597,7 +623,7 @@
         startBtn.addEventListener('click', () => {
             startDiv.style.display = 'none';
             endDiv.style.display = 'none';
-            setCanvasSize();       // 重新确保尺寸
+            setCanvasSize();
             rebuildIcons();
             launchGame();
         });
@@ -619,7 +645,6 @@
         ctx.fillText("点击「开始守护」", centerX, centerY - centerRadius - 12);
     }
     
-    // ---------- 初始化 ----------
     function init() {
         setCanvasSize();
         rebuildIcons();
