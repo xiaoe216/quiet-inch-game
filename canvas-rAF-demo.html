@@ -2,55 +2,152 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>测试动画 - 圆 + 方块移动</title>
+    <title>测试：图片向中心移动</title>
     <style>
-        body { background: #222; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-        canvas { background: #333; border-radius: 20px; box-shadow: 0 0 15px rgba(0,0,0,0.5); }
+        body { background: #1a2a32; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        canvas { background: #2c4a3e; border-radius: 20px; box-shadow: 0 0 20px rgba(0,0,0,0.5); cursor: pointer; }
     </style>
 </head>
 <body>
-    <canvas id="gameCanvas" width="800" height="400"></canvas>
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
     <script>
-        // 获取 canvas 和绘图上下文
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
 
-        // 方块初始位置（右侧）
-        let boxX = canvas.width - 50;
-        const boxY = canvas.height - 80;
-        const boxSize = 50;
-        const speed = 3; // 每帧向左移动3像素
+        // 中心点坐标
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+        const circleRadius = 60;
 
-        // 动画函数
-        function animate() {
-            // 1. 移动方块
-            boxX -= speed;
-            // 如果方块完全移出左侧，则重置到右侧（可选，避免消失）
-            if (boxX + boxSize < 0) {
-                boxX = canvas.width;
-            }
+        // 存储所有移动的图片对象
+        let items = [];
 
-            // 2. 清空画布
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            // 3. 绘制中央圆（黄色）
-            ctx.beginPath();
-            ctx.arc(canvas.width/2, canvas.height/2, 60, 0, Math.PI * 2);
-            ctx.fillStyle = '#FFD966';
-            ctx.fill();
-            ctx.strokeStyle = '#B8860B';
-            ctx.lineWidth = 4;
-            ctx.stroke();
-
-            // 4. 绘制方块（红色）
-            ctx.fillStyle = '#E34234';
-            ctx.fillRect(boxX, boxY, boxSize, boxSize);
-
-            // 5. 请求下一帧
-            requestAnimationFrame(animate);
+        // 创建一个简单的图片（这里用离屏Canvas生成一个带纹理的圆形，模拟“图片”，你可以轻松换成你的图标）
+        function createExampleImage(color, text) {
+            const size = 48;
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const c = canvas.getContext('2d');
+            c.fillStyle = color;
+            c.beginPath();
+            c.arc(size/2, size/2, size/2 - 2, 0, Math.PI*2);
+            c.fill();
+            c.fillStyle = 'white';
+            c.font = 'bold 20px "Segoe UI"';
+            c.textAlign = 'center';
+            c.textBaseline = 'middle';
+            c.fillText(text, size/2, size/2);
+            const img = new Image();
+            img.src = canvas.toDataURL(); // 转为图片URL
+            return img;
         }
 
-        // 启动动画
+        // 预置两种示例图片（自然声和噪音，你可以后续替换成真实图标）
+        const naturalImg = createExampleImage('#4caf50', '🐦');  // 自然声（绿色，小鸟符号）
+        const noiseImg = createExampleImage('#f44336', '📱');    // 噪音（红色，手机符号）
+
+        // 随机生成一个新的移动物体
+        function spawnItem() {
+            const type = Math.random() < 0.5 ? 'natural' : 'noise';  // 随机类型，你也可以控制比例
+            const img = type === 'natural' ? naturalImg : noiseImg;
+            const size = 48;  // 图片宽高
+            
+            // 随机选择边缘：0=上，1=右，2=下，3=左
+            const edge = Math.floor(Math.random() * 4);
+            let x, y;
+            if (edge === 0) { // 上边缘
+                x = Math.random() * canvas.width;
+                y = -size;
+            } else if (edge === 1) { // 右边缘
+                x = canvas.width + size;
+                y = Math.random() * canvas.height;
+            } else if (edge === 2) { // 下边缘
+                x = Math.random() * canvas.width;
+                y = canvas.height + size;
+            } else { // 左边缘
+                x = -size;
+                y = Math.random() * canvas.height;
+            }
+            
+            // 计算从 (x,y) 指向中心点的方向向量
+            let dx = centerX - x;
+            let dy = centerY - y;
+            const len = Math.hypot(dx, dy);
+            if (len < 0.001) return;
+            // 归一化，并设定速度（例如每秒 150 像素，假设帧率约60帧，每帧2.5像素左右）
+            const speed = 2.5;
+            const vx = (dx / len) * speed;
+            const vy = (dy / len) * speed;
+            
+            items.push({
+                x, y, vx, vy,
+                img: img,
+                size: size,
+                type: type
+            });
+        }
+
+        // 更新所有图片的位置，移除超出边界的
+        function updateItems() {
+            for (let i = items.length-1; i >= 0; i--) {
+                const item = items[i];
+                item.x += item.vx;
+                item.y += item.vy;
+                // 如果图片完全超出画布边界（且离中心太远），移除
+                if (item.x + item.size < -200 || 
+                    item.x - item.size > canvas.width + 200 ||
+                    item.y + item.size < -200 || 
+                    item.y - item.size > canvas.height + 200) {
+                    items.splice(i,1);
+                }
+            }
+        }
+        
+        // 绘制中央圆
+        function drawCenterCircle() {
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, circleRadius, 0, Math.PI*2);
+            ctx.fillStyle = "#3d9df5";
+            ctx.fill();
+            ctx.strokeStyle = "#7ec8ff";
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            ctx.fillStyle = "white";
+            ctx.font = "bold 16px sans-serif";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText("寂静之地", centerX, centerY);
+        }
+        
+        // 绘制所有图片
+        function drawItems() {
+            for (const item of items) {
+                ctx.drawImage(item.img, item.x, item.y, item.size, item.size);
+            }
+        }
+        
+        // 控制生成图片的速率（每帧按概率生成，避免过多）
+        let frameCount = 0;
+        function animate() {
+            // 清空画布
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // 每大约6帧生成一个新图片（控制密度）
+            frameCount++;
+            if (frameCount % 6 === 0) {
+                spawnItem();
+                // 限制总数量，避免太多
+                if (items.length > 30) items.shift();
+            }
+            
+            updateItems();
+            drawCenterCircle();
+            drawItems();
+            
+            requestAnimationFrame(animate);
+        }
+        
         animate();
     </script>
 </body>
