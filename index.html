@@ -3,22 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>守护一平方英寸 · 动态寂静</title>
+    <title>守护一平方英寸 · 自然意志</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
-        body { background: #1a3f2c; min-height: 100vh; display: flex; justify-content: center; align-items: center; font-family: system-ui, sans-serif; padding: 16px; }
+        body { background: #1a3f2c; min-height: 100vh; display: flex; justify-content: center; align-items: center; font-family: 'Segoe UI', 'PingFang SC', Roboto, sans-serif; padding: 16px; }
         .game-container { background: #2c5e3a; border-radius: 48px; padding: 16px; box-shadow: 0 20px 35px rgba(0,0,0,0.4); }
-        canvas { display: block; margin: 0 auto; border-radius: 28px; box-shadow: 0 8px 20px rgba(0,0,0,0.3); cursor: crosshair; background: #3c6e47; width: 100%; height: auto; }
-        .info-panel { display: flex; justify-content: space-between; align-items: baseline; padding: 12px 24px 8px 24px; color: #f9f1cf; font-weight: bold; text-shadow: 1px 1px 0 #1e3a2a; }
-        .score-box, .timer-box { background: #1e3a2a; padding: 8px 20px; border-radius: 60px; font-size: 1.6rem; backdrop-filter: blur(4px); transition: all 0.1s; }
+        canvas { display: block; margin: 0 auto; border-radius: 28px; box-shadow: 0 8px 20px rgba(0,0,0,0.3); cursor: crosshair; background: #3c6e47; width: 100%; height: auto; touch-action: manipulation; }
+        .info-panel { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; padding: 8px 16px; color: #f9f1cf; font-weight: bold; text-shadow: 1px 1px 0 #1e3a2a; }
+        .score-box, .timer-box { background: #1e3a2a; padding: 6px 16px; border-radius: 60px; font-size: 1.2rem; white-space: nowrap; backdrop-filter: blur(4px); }
+        .score-box span, .timer-box span { font-size: 0.8rem; margin-right: 6px; }
         .start-screen, .end-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); display: flex; justify-content: center; align-items: center; z-index: 100; }
-        .card { background: #fff9ef; max-width: 340px; width: 80%; border-radius: 48px; padding: 32px 24px; text-align: center; box-shadow: 0 25px 40px rgba(0,0,0,0.5); border: 1px solid #e0c8a0; }
-        .card h1 { font-size: 2rem; color: #2c5e2e; margin-bottom: 12px; }
-        .card p { color: #4a3a2a; margin-bottom: 24px; line-height: 1.4; }
-        .btn { background: #4f8a4b; border: none; color: white; font-size: 1.4rem; font-weight: bold; padding: 12px 28px; border-radius: 60px; cursor: pointer; transition: 0.1s linear; box-shadow: 0 4px 0 #2c5e2e; }
+        .card { background: #fff9ef; max-width: 85%; width: 340px; border-radius: 48px; padding: 24px 20px; text-align: center; box-shadow: 0 25px 40px rgba(0,0,0,0.5); border: 1px solid #e0c8a0; }
+        .card h1 { font-size: 1.8rem; color: #2c5e2e; margin-bottom: 12px; }
+        .card p { color: #4a3a2a; margin-bottom: 20px; line-height: 1.4; font-size: 0.9rem; }
+        .rule-badge { background: #e6ddcc; border-radius: 40px; padding: 8px; margin: 16px 0; font-size: 0.8rem; text-align: left; }
+        .rule-badge span { display: inline-block; margin: 4px 0; }
+        .btn { background: #4f8a4b; border: none; color: white; font-size: 1.2rem; font-weight: bold; padding: 10px 24px; border-radius: 60px; cursor: pointer; transition: 0.1s linear; box-shadow: 0 4px 0 #2c5e2e; margin-top: 8px; }
         .btn:active { transform: translateY(2px); box-shadow: 0 1px 0 #2c5e2e; }
         .footer-credit { position: fixed; bottom: 12px; right: 16px; background: rgba(0,0,0,0.5); color: #ddd; font-size: 10px; padding: 4px 12px; border-radius: 40px; z-index: 200; pointer-events: none; }
-        @media (max-width: 700px) { .score-box, .timer-box { padding: 4px 16px; font-size: 1.2rem; } .card h1 { font-size: 1.6rem; } }
+        @media (max-width: 700px) { .score-box, .timer-box { font-size: 1rem; padding: 4px 12px; } .card h1 { font-size: 1.4rem; } }
     </style>
 </head>
 <body>
@@ -33,9 +36,13 @@
 <div id="startScreen" class="start-screen">
     <div class="card">
         <h1>🌿 守护一平方英寸</h1>
-        <p>点击自然声 <span style="background:#4caf50; color:white; padding:2px 10px; border-radius:20px;">➕1</span> &nbsp;&nbsp;避开噪音 <span style="background:#f44336; color:white; padding:2px 10px; border-radius:20px;">➖1</span><br>⚠️ 噪音触碰到中心也会扣分！<br>你的分数越高，世界越宁静 🌱</p>
+        <div class="rule-badge">
+            <span>🟢 <strong>自然声</strong> → 让它飞入中心 <span style="color:green;">+1</span> &nbsp;&nbsp; ❌ 点击它则 <span style="color:red;">-1</span></span><br>
+            <span>🔴 <strong>噪音</strong> → 点击它拦截 <span style="color:darkgreen;">0分</span> &nbsp;&nbsp; ⚠️ 让噪音进入中心则 <span style="color:red;">-1</span></span>
+        </div>
+        <p>看见红色<strong>必须点掉</strong>，看见绿色<strong>千万别点</strong>，让它飘入中心。</p>
         <button class="btn" id="startBtn">🎧 开始守护</button>
-        <p style="font-size:12px; margin-top:16px;">🎨 灵感 · 戈登·汉普顿《一平方英寸的寂静》</p>
+        <p style="font-size:10px; margin-top:16px;">🎨 灵感 · 戈登·汉普顿《一平方英寸的寂静》</p>
     </div>
 </div>
 
@@ -48,7 +55,7 @@
     </div>
 </div>
 
-<div class="footer-credit">🎨 图标可替换 | 动态音效 | 触碰中心机制</div>
+<div class="footer-credit">🎨 自然声请放任飘入 | 噪音请点击拦截</div>
 
 <script>
 (function(){
@@ -67,12 +74,11 @@
     const MOVE_SPEED = 2.3;
     const centerX = canvas.width/2, centerY = canvas.height/2, centerRadius = 58;
     
-    // ---------- 音频 ----------
+    // 音频相关
     let audioCtx = null;
     let bgmOsc = null;
     let bgmGain = null;
-    let bgmInterval = null;
-    let naturalTickInterval = null;  // 动态自然声背景
+    let naturalTickInterval = null;
     
     function initAudio() {
         if (!audioCtx && window.AudioContext) {
@@ -80,7 +86,7 @@
         }
     }
     
-    // 播放动态音效 (type: 'natural' 或 'noise')
+    // 播放动态音效 (type: 'natural_success', 'natural_mistake', 'noise_hit', 'noise_pollute')
     function playDynamicSound(type) {
         if (!audioCtx) initAudio();
         if (!audioCtx) return;
@@ -91,49 +97,57 @@
             osc.connect(gain);
             gain.connect(audioCtx.destination);
             
-            if (type === 'natural') {
-                // 自然声：频率随分数升高 (440 ~ 880)，音量随分数升高 (0.1 ~ 0.6)
-                let freq = 440 + Math.min(440, Math.max(0, score * 3));
-                let volume = 0.12 + Math.min(0.5, score / 80);
-                osc.frequency.value = freq;
-                gain.gain.value = volume;
+            if (type === 'natural_success') {
+                // 自然声成功进入中心: 清脆上扬
+                osc.frequency.value = 880;
+                gain.gain.value = 0.25;
+                osc.start();
+                gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.3);
+                osc.stop(now + 0.3);
+            } else if (type === 'natural_mistake') {
+                // 误点自然声: 柔和但遗憾的低音
+                osc.frequency.value = 330;
+                gain.gain.value = 0.2;
                 osc.start();
                 gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.25);
                 osc.stop(now + 0.25);
-            } else {
-                // 噪音：频率随分数升高而降低 (800 ~ 200)，音量随分数升高而降低 (0.3 ~ 0.02)
-                let freq = Math.max(200, 800 - Math.min(600, score * 5));
-                let volume = Math.max(0.03, 0.3 - score / 70);
-                osc.frequency.value = freq;
-                gain.gain.value = volume;
+            } else if (type === 'noise_hit') {
+                // 成功点击噪音: 短促的“噗”声，表示拦截成功
+                osc.frequency.value = 120;
+                gain.gain.value = 0.15;
                 osc.start();
-                gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.2);
-                osc.stop(now + 0.2);
+                gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.15);
+                osc.stop(now + 0.15);
+            } else if (type === 'noise_pollute') {
+                // 噪音进入中心: 低沉刺耳
+                osc.frequency.value = 180;
+                gain.gain.value = 0.3;
+                osc.start();
+                gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.3);
+                osc.stop(now + 0.3);
             }
         } catch(e) {}
     }
     
-    // 背景音乐：动态自然滴答声 (分数越高，间隔越短，声音越清脆)
+    // 背景音乐动态自然滴答
     function startDynamicBGM() {
         if (!audioCtx) initAudio();
         if (!audioCtx) return;
         stopBGM();
-        // 持续的低频氛围 (轻柔)
         try {
             bgmOsc = audioCtx.createOscillator();
             bgmGain = audioCtx.createGain();
             bgmOsc.type = 'sine';
             bgmOsc.frequency.value = 100;
-            bgmGain.gain.value = 0.06;
+            bgmGain.gain.value = 0.05;
             bgmOsc.connect(bgmGain);
             bgmGain.connect(audioCtx.destination);
             bgmOsc.start();
         } catch(e) {}
         
-        // 动态自然间隔滴答
         function scheduleNaturalTick() {
             if (!gameRunning) return;
-            let intervalMs = Math.max(800, 3000 - Math.min(2500, score * 20));
+            let intervalMs = Math.max(800, 3000 - Math.min(2500, Math.abs(score) * 15));
             if (naturalTickInterval) clearTimeout(naturalTickInterval);
             naturalTickInterval = setTimeout(() => {
                 if (!gameRunning) return;
@@ -141,8 +155,8 @@
                     const now = audioCtx.currentTime;
                     const tickOsc = audioCtx.createOscillator();
                     const tickGain = audioCtx.createGain();
-                    let freq = 800 + Math.min(600, score * 4);
-                    let vol = 0.04 + Math.min(0.2, score / 100);
+                    let freq = 800 + Math.min(600, Math.abs(score) * 5);
+                    let vol = 0.04 + Math.min(0.2, Math.abs(score) / 100);
                     tickOsc.frequency.value = freq;
                     tickGain.gain.value = vol;
                     tickOsc.connect(tickGain);
@@ -162,7 +176,7 @@
         if (naturalTickInterval) { clearTimeout(naturalTickInterval); naturalTickInterval = null; }
     }
     
-    // ----- 图标生成 (emoji 图标) -----
+    // ----- 图标生成 (emoji 临时，后续可替换) -----
     function createEmojiIcon(emoji, bgColor) {
         const size = 56;
         const offCanvas = document.createElement('canvas');
@@ -188,7 +202,7 @@
     
     function spawnItem() {
         if (!gameRunning) return;
-        const isNatural = Math.random() < 0.6;
+        const isNatural = Math.random() < 0.6;  // 自然声概率稍高，鼓励忍住不点
         const img = getRandomIcon(isNatural);
         const size = 52;
         const edge = Math.floor(Math.random()*4);
@@ -211,16 +225,17 @@
             // 碰撞中心检测
             const centerDist = Math.hypot(it.x + it.size/2 - centerX, it.y + it.size/2 - centerY);
             if (centerDist < centerRadius + it.size/2) {
-                // 触碰到中心圆圈
+                // 触碰到中心圆
                 if (it.type === 'natural') {
                     score++;
                     document.getElementById('scoreValue').innerText = score;
-                    playDynamicSound('natural'); // 自然声触碰也播放正面音效
-                } else {
+                    playDynamicSound('natural_success');
+                    triggerCenterFlash('natural');
+                } else { // noise
                     score--;
                     document.getElementById('scoreValue').innerText = score;
-                    playDynamicSound('noise');
-                    // 短暂红色闪烁效果在绘制时做
+                    playDynamicSound('noise_pollute');
+                    triggerCenterFlash('noise');
                 }
                 items.splice(i,1);
                 continue;
@@ -231,11 +246,21 @@
         }
     }
     
-    function drawCenter(flashRed) {
+    let flashCenter = false;
+    let flashColor = '';
+    let flashTimer = null;
+    function triggerCenterFlash(type) {
+        flashCenter = true;
+        flashColor = (type === 'natural') ? '#a5d6a5' : '#e67e22';
+        if (flashTimer) clearTimeout(flashTimer);
+        flashTimer = setTimeout(() => { flashCenter = false; }, 150);
+    }
+    
+    function drawCenter() {
         ctx.beginPath();
         ctx.arc(centerX, centerY, centerRadius, 0, Math.PI*2);
         let fillColor = "#f4e3b1";
-        if (flashRed) fillColor = "#e67e22";
+        if (flashCenter && flashColor) fillColor = flashColor;
         ctx.fillStyle = fillColor;
         ctx.fill();
         ctx.strokeStyle = "#c9a87b";
@@ -246,7 +271,7 @@
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
         ctx.fillText("🌿 寂静地", centerX, centerY);
-        // 光环：分数越高越亮
+        // 光晕
         let glowAlpha = Math.min(0.6, Math.abs(score)/150);
         ctx.beginPath();
         ctx.arc(centerX, centerY, centerRadius+8, 0, Math.PI*2);
@@ -254,16 +279,9 @@
         ctx.fill();
     }
     
-    let flashCenter = false;
-    let flashTimer = null;
-    function triggerCenterFlash() {
-        flashCenter = true;
-        if (flashTimer) clearTimeout(flashTimer);
-        flashTimer = setTimeout(() => { flashCenter = false; }, 150);
-    }
-    
     function drawItems() { for(const it of items) ctx.drawImage(it.img, it.x, it.y, it.size, it.size); }
     
+    // ----- 交互逻辑核心（新规则）-----
     function handleHit(clientX, clientY) {
         if(!gameRunning) return;
         const rect=canvas.getBoundingClientRect();
@@ -272,15 +290,18 @@
         for(let i=items.length-1;i>=0;i--){
             const it=items[i];
             if(canvasX>=it.x && canvasX<=it.x+it.size && canvasY>=it.y && canvasY<=it.y+it.size){
-                if(it.type==='natural'){
-                    score++;
-                    playDynamicSound('natural');
-                } else {
+                if(it.type === 'natural') {
+                    // 点击自然声 -> 扣分（打扰自然）
                     score--;
-                    playDynamicSound('noise');
-                    triggerCenterFlash();
+                    document.getElementById('scoreValue').innerText = score;
+                    playDynamicSound('natural_mistake');
+                    triggerCenterFlash('natural');
+                } else { // noise
+                    // 点击噪音 -> 成功拦截，无分变化，但播放一个轻反馈
+                    playDynamicSound('noise_hit');
+                    // 可以加一个小视觉反馈，不扣分不加分
+                    triggerCenterFlash('noise'); 
                 }
-                document.getElementById('scoreValue').innerText = score;
                 items.splice(i,1);
                 break;
             }
@@ -321,7 +342,7 @@
             if(spawnCounter>=SPAWN_FRAMES){ spawnCounter=0; spawnItem(); if(items.length>42) items.splice(0,10); }
             ctx.clearRect(0,0,canvas.width,canvas.height);
             drawItems();
-            drawCenter(flashCenter);
+            drawCenter();
             animationId=requestAnimationFrame(frame);
         }
         frame();
@@ -365,7 +386,7 @@
     
     function drawIdle(){
         ctx.clearRect(0,0,canvas.width,canvas.height);
-        drawCenter(false);
+        drawCenter();
         ctx.fillStyle="#ffffffcc"; ctx.font="18px sans-serif"; ctx.textAlign="center";
         ctx.fillText("点击「开始守护」", centerX, centerY-70);
     }
