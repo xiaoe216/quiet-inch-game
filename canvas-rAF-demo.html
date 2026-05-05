@@ -1,22 +1,57 @@
-      // 中央圆
-      ctx.beginPath();
-      ctx.arc(cx, cy, circleR, 0, Math.PI * 2);
-      ctx.fillStyle = "#3d9df5";
-      ctx.fill();
-      ctx.strokeStyle = "#7ec8ff";
-      ctx.lineWidth = 2;
-      ctx.stroke();
-      // 方块（从右向左）
-      ctx.fillStyle = "#f5a623";
-      ctx.fillRect(squareX, cy - squareSize / 2, squareSize, squareSize);
-      squareX -= speed;
-      // 移出左侧后从右侧重新进入，形成循环
-      if (squareX < -squareSize) {
-        squareX = canvas.width + squareSize;
-      }
-      requestAnimationFrame(draw);
-    }
-    requestAnimationFrame(draw);
-  </script>
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>测试动画 - 圆 + 方块移动</title>
+    <style>
+        body { background: #222; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        canvas { background: #333; border-radius: 20px; box-shadow: 0 0 15px rgba(0,0,0,0.5); }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="800" height="400"></canvas>
+    <script>
+        // 获取 canvas 和绘图上下文
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // 方块初始位置（右侧）
+        let boxX = canvas.width - 50;
+        const boxY = canvas.height - 80;
+        const boxSize = 50;
+        const speed = 3; // 每帧向左移动3像素
+
+        // 动画函数
+        function animate() {
+            // 1. 移动方块
+            boxX -= speed;
+            // 如果方块完全移出左侧，则重置到右侧（可选，避免消失）
+            if (boxX + boxSize < 0) {
+                boxX = canvas.width;
+            }
+
+            // 2. 清空画布
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 3. 绘制中央圆（黄色）
+            ctx.beginPath();
+            ctx.arc(canvas.width/2, canvas.height/2, 60, 0, Math.PI * 2);
+            ctx.fillStyle = '#FFD966';
+            ctx.fill();
+            ctx.strokeStyle = '#B8860B';
+            ctx.lineWidth = 4;
+            ctx.stroke();
+
+            // 4. 绘制方块（红色）
+            ctx.fillStyle = '#E34234';
+            ctx.fillRect(boxX, boxY, boxSize, boxSize);
+
+            // 5. 请求下一帧
+            requestAnimationFrame(animate);
+        }
+
+        // 启动动画
+        animate();
+    </script>
 </body>
 </html>
