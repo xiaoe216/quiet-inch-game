@@ -61,8 +61,8 @@
         .silence-box {
             background: #2d6a4f;
         }
-        /* 弹窗样式 */
-        .modal {
+        /* 模态窗口 - 不可点击背景关闭 */
+        .fixed-modal {
             position: fixed;
             top: 0;
             left: 0;
@@ -73,30 +73,62 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            z-index: 200;
+            z-index: 1000;
+            cursor: default;
         }
         .modal-card {
             background: #fff9ef;
-            width: 85%;
-            max-width: 340px;
+            width: 90%;
+            max-width: 450px;
             border-radius: 48px;
             padding: 24px 20px;
             text-align: center;
             box-shadow: 0 25px 40px rgba(0,0,0,0.5);
+            animation: fadeInUp 0.3s ease;
+        }
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(40px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
         .modal-card h2 {
             color: #2c5e2e;
             margin-bottom: 16px;
         }
+        .modal-card canvas {
+            background: #ddd;
+            border-radius: 20px;
+            margin: 12px auto;
+            display: block;
+            width: 100%;
+            height: auto;
+            cursor: crosshair;
+        }
+        .modal-card input {
+            padding: 10px;
+            border-radius: 60px;
+            border: 1px solid #b0a58a;
+            width: 80%;
+            margin: 12px 0;
+            font-size: 1rem;
+            text-align: center;
+        }
         .modal-card button {
             background: #4f8a4b;
             border: none;
             color: white;
-            font-size: 1rem;
-            padding: 10px 20px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            padding: 12px 24px;
             border-radius: 60px;
-            margin: 8px;
             cursor: pointer;
+            margin-top: 8px;
+            width: 80%;
         }
         .world-map {
             position: absolute;
@@ -127,18 +159,17 @@
         .map-dot.yellow { background: #f39c12; }
         .map-dot.red { background: #c0392b; }
         .event-toast {
-            position: absolute;
+            position: fixed;
             top: 80px;
             left: 50%;
             transform: translateX(-50%);
-            background: #2c2c1c;
+            background: rgba(0,0,0,0.7);
             color: #ffecb3;
             padding: 8px 16px;
             border-radius: 40px;
             font-size: 12px;
-            z-index: 15;
+            z-index: 200;
             white-space: nowrap;
-            background: rgba(0,0,0,0.7);
             pointer-events: none;
         }
         .start-screen, .end-screen {
@@ -244,8 +275,8 @@
     let currentSpawnDelay = baseSpawnDelay;
     
     // 光环相关
-    let auraRadius = 60;          // 初始半径
-    let maxAura = Math.min(canvasWidth, canvasHeight) * 0.45;
+    let auraRadius = 60;
+    let maxAura = 0;
     let centerX = canvasWidth/2, centerY = canvasHeight/2;
     let centerRadius = 60;
     
@@ -318,7 +349,7 @@
         if(ambientInterval) clearInterval(ambientInterval);
     }
     
-    // 图标生成 (简单彩色圆+emoji)
+    // 图标生成
     let naturalImg, noiseImg;
     function createIcon(color, emoji) {
         const off = document.createElement('canvas');
@@ -359,7 +390,6 @@
     function updateItems() {
         for(let i=0; i<items.length; i++) {
             let it = items[i];
-            // 光环影响速度
             let distToCenter = Math.hypot(it.x+it.size/2 - centerX, it.y+it.size/2 - centerY);
             let speedFactor = 1;
             if(stage >= 3 && distToCenter < auraRadius) {
@@ -367,18 +397,16 @@
             }
             it.x += it.vx * speedFactor;
             it.y += it.vy * speedFactor;
-            // 触碰中心检测
             let centerDist = Math.hypot(it.x+it.size/2 - centerX, it.y+it.size/2 - centerY);
             if(centerDist < centerRadius + it.size/2) {
                 if(it.type === 'natural') {
                     score += 1;
                     silence = Math.min(100, silence + 2);
-                    // 光环扩张
                     if(stage >= 3) {
                         auraRadius = Math.min(maxAura, auraRadius + 2);
                     }
                     playSound(880, 0.2, 0.2);
-                } else { // noise 入侵扣寂静
+                } else {
                     silence = Math.max(0, silence - 8);
                     playSound(140, 0.2, 0.25);
                     if(silence <= 0) gameLose("寂静值归零，噪音彻底入侵");
@@ -387,7 +415,6 @@
                 i--;
                 continue;
             }
-            // 超出边界移除
             if(it.x+it.size < -200 || it.x > canvasWidth+200 || it.y+it.size < -200 || it.y > canvasHeight+200) {
                 items.splice(i,1);
                 i--;
@@ -395,7 +422,6 @@
         }
     }
     
-    // 绘制
     function drawBackground() {
         const grad = ctx.createLinearGradient(0,0,0,canvasHeight);
         grad.addColorStop(0,"#2d5a3b");
@@ -451,6 +477,7 @@
     }
     
     // 阶段过渡
+    let stageInterval = null;
     function advanceStage() {
         if(stage == 1 && foundPoints >= NEED_POINTS) {
             stage = 2;
@@ -458,7 +485,6 @@
             playPlaneSound();
             showToast("✈️ 噪音入侵！快拦截红色噪音，保护寂静值", 2500);
             startTimer();
-            // 初始生成几个噪音
             for(let i=0;i<3;i++) spawnItem();
         }
         if(stage == 2 && score >= 30 && silence > 60) {
@@ -478,6 +504,7 @@
         }
         if(stage == 5 && lawResistCount >= 2 && silence >= 70 && score >= 100) {
             stage = 6;
+            // 游戏胜利，弹出不可误关的中央弹窗
             gameWinFinal();
         }
     }
@@ -510,50 +537,92 @@
         gameActive = false;
         if(timerInterval) clearInterval(timerInterval);
         stopAmbient();
+        if(stageInterval) clearInterval(stageInterval);
         alert(msg + "\n点击确定重新开始");
         location.reload();
     }
     
+    // 胜利弹窗 - 中央展开，游戏完全停止，必须手动确认
     function gameWinFinal() {
-        gameActive = false;
+        if(!gameActive) return;
+        gameActive = false;          // 停止所有游戏循环
         if(timerInterval) clearInterval(timerInterval);
+        if(stageInterval) clearInterval(stageInterval);
         stopAmbient();
-        // 划定保护区界面
-        let div = document.createElement('div');
-        div.className = 'modal';
-        div.innerHTML = `
+        
+        // 创建模态窗口
+        const modal = document.createElement('div');
+        modal.className = 'fixed-modal';
+        modal.innerHTML = `
             <div class="modal-card">
                 <h2>🏞️ 建立永久寂静保护区</h2>
                 <p>你已经证明了寂静的价值，现在请为这片土地划定边界并命名。</p>
-                <canvas id="drawCanvas" width="400" height="250" style="background:#ddd; border-radius:16px; margin:16px 0;"></canvas>
-                <input id="reserveName" placeholder="保护区名称" style="padding:8px; border-radius:40px; margin-bottom:12px; width:80%;">
+                <canvas id="drawCanvas" width="400" height="250" style="background:#ddd; border-radius:16px; margin:12px auto; width:100%; height:auto; cursor:crosshair;"></canvas>
+                <input type="text" id="reserveName" placeholder="输入保护区名称" autocomplete="off">
                 <button id="confirmReserve">🌿 确立保护区</button>
             </div>
         `;
-        document.body.appendChild(div);
-        let drawCanvas = document.getElementById('drawCanvas');
-        let dctx = drawCanvas.getContext('2d');
+        document.body.appendChild(modal);
+        
+        const drawCanvas = document.getElementById('drawCanvas');
+        const dctx = drawCanvas.getContext('2d');
+        let drawWidth = drawCanvas.clientWidth;
+        let drawHeight = drawCanvas.clientHeight;
+        drawCanvas.width = drawWidth;
+        drawCanvas.height = drawHeight;
         dctx.fillStyle = "#aad4aa";
-        dctx.fillRect(0,0,drawCanvas.width,drawCanvas.height);
-        let drawing = false, points = [];
+        dctx.fillRect(0,0,drawWidth,drawHeight);
+        
+        let drawing = false;
+        let points = [];
+        
         function drawPoint(x,y) {
             dctx.beginPath();
             dctx.arc(x,y,3,0,Math.PI*2);
             dctx.fillStyle = 'blue';
             dctx.fill();
         }
-        drawCanvas.onmousedown = (e) => { drawing=true; points=[]; };
-        drawCanvas.onmousemove = (e) => {
-            if(!drawing) return;
-            let rect = drawCanvas.getBoundingClientRect();
-            let x = (e.clientX - rect.left) * drawCanvas.width / rect.width;
-            let y = (e.clientY - rect.top) * drawCanvas.height / rect.height;
+        
+        function getCoords(e) {
+            const rect = drawCanvas.getBoundingClientRect();
+            const scaleX = drawCanvas.width / rect.width;
+            const scaleY = drawCanvas.height / rect.height;
+            let clientX, clientY;
+            if(e.touches) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+            let x = (clientX - rect.left) * scaleX;
+            let y = (clientY - rect.top) * scaleY;
+            x = Math.min(Math.max(0, x), drawCanvas.width);
+            y = Math.min(Math.max(0, y), drawCanvas.height);
+            return {x,y};
+        }
+        
+        function startDraw(e) {
+            e.preventDefault();
+            drawing = true;
+            points = [];
+            const {x,y} = getCoords(e);
             points.push({x,y});
             drawPoint(x,y);
-        };
-        drawCanvas.onmouseup = () => {
-            drawing=false;
-            if(points.length>3) {
+        }
+        
+        function drawMove(e) {
+            if(!drawing) return;
+            e.preventDefault();
+            const {x,y} = getCoords(e);
+            points.push({x,y});
+            drawPoint(x,y);
+        }
+        
+        function endDraw() {
+            if(!drawing) return;
+            drawing = false;
+            if(points.length > 3) {
                 dctx.beginPath();
                 dctx.moveTo(points[0].x, points[0].y);
                 for(let p of points) dctx.lineTo(p.x,p.y);
@@ -561,25 +630,23 @@
                 dctx.fillStyle = 'rgba(100,200,100,0.3)';
                 dctx.fill();
                 dctx.strokeStyle = 'green';
-                dctx.lineWidth=2;
+                dctx.lineWidth = 2;
                 dctx.stroke();
             }
-        };
-        drawCanvas.ontouchstart = (e) => { e.preventDefault(); drawing=true; points=[]; };
-        drawCanvas.ontouchmove = (e) => {
-            e.preventDefault();
-            let rect = drawCanvas.getBoundingClientRect();
-            let touch = e.touches[0];
-            let x = (touch.clientX - rect.left) * drawCanvas.width / rect.width;
-            let y = (touch.clientY - rect.top) * drawCanvas.height / rect.height;
-            points.push({x,y});
-            drawPoint(x,y);
-        };
-        drawCanvas.ontouchend = (e) => drawCanvas.onmouseup();
+        }
+        
+        drawCanvas.addEventListener('mousedown', startDraw);
+        drawCanvas.addEventListener('mousemove', drawMove);
+        drawCanvas.addEventListener('mouseup', endDraw);
+        drawCanvas.addEventListener('touchstart', startDraw);
+        drawCanvas.addEventListener('touchmove', drawMove);
+        drawCanvas.addEventListener('touchend', endDraw);
+        
         document.getElementById('confirmReserve').onclick = () => {
             let name = document.getElementById('reserveName').value.trim();
             if(!name) name = "寂静之域";
             alert(`🎉 恭喜！你建立了永久寂静保护区「${name}」\n感谢你的守护！`);
+            modal.remove();
             location.reload();
         };
     }
@@ -627,13 +694,13 @@
             if(Math.random() < 0.025) {
                 lawEventActive = true;
                 let modal = document.createElement('div');
-                modal.className = 'modal';
+                modal.className = 'fixed-modal';
                 modal.innerHTML = `
                     <div class="modal-card">
                         <h2>🏛️ 立法危机</h2>
                         <p>「国会提议取消自然保护区的噪音限制！」</p>
-                        <button id="resistBtn">🌿 游说议员 (花费35积分)</button>
-                        <button id="ignoreBtn">⚠️ 放任不管</button>
+                        <button id="resistBtn" style="background:#4f8a4b;">🌿 游说议员 (花费35积分)</button>
+                        <button id="ignoreBtn" style="background:#a0522d;">⚠️ 放任不管</button>
                     </div>
                 `;
                 document.body.appendChild(modal);
@@ -684,18 +751,15 @@
             }
             return;
         }
-        // 阶段2+ 点击图标
         for(let i=items.length-1; i>=0; i--) {
             let it = items[i];
             if(mx >= it.x && mx <= it.x+it.size && my >= it.y && my <= it.y+it.size) {
                 if(it.type === 'natural') {
-                    // 错误点击自然声 -> 扣分
                     score = Math.max(0, score-2);
                     silence = Math.max(0, silence-3);
                     playSound(400,0.2,0.15);
                     showToast("不要打扰自然声！", 600);
                 } else {
-                    // 正确拦截噪音 -> 不加分，但保护寂静
                     playSound(200,0.1,0.1);
                 }
                 items.splice(i,1);
@@ -719,7 +783,6 @@
         auraRadius = centerRadius;
         maxAura = Math.min(canvasWidth, canvasHeight) * 0.45;
         initAudio();
-        // 生成聆听点
         listeningPoints = [];
         for(let i=0;i<5;i++) {
             listeningPoints.push({
@@ -743,14 +806,14 @@
         document.getElementById('worldMapPanel').style.display = 'none';
         startAmbient();
         updateUI();
-        // 每隔500ms检查阶段
-        let stageInterval = setInterval(() => {
+        if(stageInterval) clearInterval(stageInterval);
+        stageInterval = setInterval(() => {
             if(!gameActive) { clearInterval(stageInterval); return; }
             advanceStage();
             if(stage >= 4 && mapUnlocked) renderMapDots();
             if(stage >= 5 && !lawInterval) startLawEvents();
         }, 800);
-        // 游戏主循环
+        
         function gameLoop() {
             if(!gameActive) return;
             if(stage >= 2) {
@@ -772,7 +835,6 @@
         gameLoop();
     }
     
-    // 开始按钮
     document.getElementById('startBtn').onclick = () => {
         document.getElementById('startScreen').style.display = 'none';
         initGame();
