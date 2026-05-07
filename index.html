@@ -5,191 +5,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>一平方英寸的寂静 · 守护之旅</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            user-select: none;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        body {
-            background: #0e2a1f;
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-family: 'Segoe UI', 'PingFang SC', Roboto, system-ui, sans-serif;
-            padding: 0;
-            margin: 0;
-        }
-
-        /* 全屏竖屏容器 */
-        .game-wrapper {
-            position: relative;
-            width: 100vw;
-            height: 100vh;
-            background: #1e4a2e;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-        }
-
-        /* HUD 面板 - 单行顶部 */
-        .hud {
-            position: absolute;
-            top: 12px;
-            left: 0;
-            right: 0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px 16px;
-            gap: 12px;
-            color: #f7f3df;
-            text-shadow: 1px 1px 0 #1e3a2a;
-            font-weight: bold;
-            z-index: 20;
-        }
-
-        .hud-item {
-            background: #1e3a2a;
-            padding: 6px 14px;
-            border-radius: 40px;
-            font-size: 0.9rem;
-            backdrop-filter: blur(4px);
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            white-space: nowrap;
-        }
-
-        /* 画布区域 - 全屏，但留出上下边距给HUD和底部 */
-        canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: block;
-            background: #2c5e3a;
-            cursor: crosshair;
-            touch-action: none;
-            z-index: 1;
-        }
-
-        /* 模态弹窗 */
-        .modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.85);
-            backdrop-filter: blur(8px);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 200;
-        }
-
-        .card {
-            background: #fef7e0;
-            width: 85%;
-            max-width: 340px;
-            border-radius: 48px;
-            padding: 24px 20px;
-            text-align: center;
-            box-shadow: 0 25px 40px rgba(0,0,0,0.4);
-            border: 1px solid #ddcca0;
-        }
-
-        .card h1 {
-            font-size: 1.6rem;
-            color: #2c5e2e;
-            margin-bottom: 16px;
-        }
-
-        .rule-line {
-            background: #ece4cc;
-            border-radius: 28px;
-            padding: 12px;
-            margin: 12px 0;
-            font-size: 0.8rem;
-            text-align: left;
-        }
-
-        .rule-line p {
-            margin: 6px 0;
-        }
-
-        .btn {
-            background: #4f8a4b;
-            border: none;
-            color: white;
-            font-size: 1.2rem;
-            font-weight: bold;
-            padding: 10px 24px;
-            border-radius: 60px;
-            cursor: pointer;
-            transition: 0.1s linear;
-            box-shadow: 0 4px 0 #2c5e2e;
-            margin-top: 12px;
-        }
-
-        .btn:active {
-            transform: translateY(2px);
-            box-shadow: 0 1px 0 #2c5e2e;
-        }
-
-        .toast {
-            position: fixed;
-            bottom: 20%;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #1e3a2a;
-            color: #ffecb3;
-            padding: 8px 18px;
-            border-radius: 40px;
-            font-size: 0.85rem;
-            z-index: 300;
-            white-space: nowrap;
-            animation: fadeUp 2s ease forwards;
-            pointer-events: none;
-        }
-
-        @keyframes fadeUp {
-            0% { opacity: 0; transform: translateX(-50%) translateY(10px); }
-            15% { opacity: 1; transform: translateX(-50%) translateY(0); }
-            85% { opacity: 1; }
-            100% { opacity: 0; transform: translateX(-50%) translateY(-8px); }
-        }
-
-        /* 聆听模式的光圈 - 可穿透点击 */
-        .glow-ring {
-            position: absolute;
-            width: 56px;
-            height: 56px;
-            border-radius: 50%;
-            border: 2px solid rgba(140, 220, 140, 0.9);
-            background: radial-gradient(circle, rgba(100, 200, 100, 0.25), transparent);
-            transform: translate(-50%, -50%);
-            animation: pulse 2.2s infinite;
-            pointer-events: none;
-            z-index: 15;
-        }
-
-        @keyframes pulse {
-            0% { opacity: 0.4; transform: translate(-50%, -50%) scale(0.8); }
-            50% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
-            100% { opacity: 0.4; transform: translate(-50%, -50%) scale(0.8); }
-        }
-
-        .hidden {
-            display: none !important;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
+        body { background: #0e2a1f; min-height: 100vh; display: flex; justify-content: center; align-items: center; font-family: 'Segoe UI', 'PingFang SC', Roboto, system-ui, sans-serif; padding: 12px; }
+        .game-wrapper { background: #1e4a2e; border-radius: 36px; padding: 12px; box-shadow: 0 20px 35px rgba(0,0,0,0.5); width: 100%; max-width: 100%; margin: auto; position: relative; }
+        canvas { display: block; width: 100%; height: auto; border-radius: 24px; background: #2c5e3a; cursor: crosshair; touch-action: none; z-index: 2; }
+        .hud { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; gap: 12px; color: #f7f3df; text-shadow: 1px 1px 0 #1e3a2a; font-weight: bold; flex-wrap: nowrap; }
+        .hud-item { background: #1e3a2a; padding: 6px 14px; border-radius: 40px; font-size: 0.85rem; backdrop-filter: blur(4px); display: flex; align-items: center; gap: 6px; white-space: nowrap; flex-shrink: 0; }
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); display: flex; justify-content: center; align-items: center; z-index: 200; }
+        .card { background: #fef7e0; width: 85%; max-width: 340px; border-radius: 48px; padding: 24px 20px; text-align: center; box-shadow: 0 25px 40px rgba(0,0,0,0.4); border: 1px solid #ddcca0; }
+        .card h1 { font-size: 1.6rem; color: #2c5e2e; margin-bottom: 16px; }
+        .rule-line { background: #ece4cc; border-radius: 28px; padding: 12px; margin: 12px 0; font-size: 0.8rem; text-align: left; }
+        .rule-line p { margin: 6px 0; }
+        .btn { background: #4f8a4b; border: none; color: white; font-size: 1.2rem; font-weight: bold; padding: 10px 24px; border-radius: 60px; cursor: pointer; transition: 0.1s linear; box-shadow: 0 4px 0 #2c5e2e; margin-top: 12px; }
+        .btn:active { transform: translateY(2px); box-shadow: 0 1px 0 #2c5e2e; }
+        .toast { position: fixed; bottom: 20%; left: 50%; transform: translateX(-50%); background: #1e3a2a; color: #ffecb3; padding: 8px 18px; border-radius: 40px; font-size: 0.85rem; z-index: 300; white-space: nowrap; animation: fadeUp 2s ease forwards; pointer-events: none; }
+        @keyframes fadeUp { 0% { opacity: 0; transform: translateX(-50%) translateY(10px); } 15% { opacity: 1; transform: translateX(-50%) translateY(0); } 85% { opacity: 1; } 100% { opacity: 0; transform: translateX(-50%) translateY(-8px); } }
+        .glow-ring { position: absolute; width: 56px; height: 56px; border-radius: 50%; border: 2px solid rgba(140, 220, 140, 0.9); background: radial-gradient(circle, rgba(100,200,100,0.25), transparent); transform: translate(-50%,-50%); animation: pulse 2.2s infinite; pointer-events: none; z-index: 10; }
+        @keyframes pulse { 0% { opacity: 0.4; transform: translate(-50%,-50%) scale(0.8); } 50% { opacity: 1; transform: translate(-50%,-50%) scale(1.2); } 100% { opacity: 0.4; transform: translate(-50%,-50%) scale(0.8); } }
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
@@ -198,7 +31,7 @@
         <div class="hud-item">🎧 寂静值 <span id="silenceVal">100</span>%</div>
         <div class="hud-item">⏱️ 倒计时 <span id="timerVal">60</span>s</div>
     </div>
-    <canvas id="gameCanvas"></canvas>
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
 </div>
 
 <!-- 规则说明界面 -->
@@ -217,462 +50,456 @@
 </div>
 
 <script>
-    (function() {
-        // ----- 画布元素 -----
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        let canvasW, canvasH;
-        let centerX, centerY, centerR = 40;
-        let itemSize = 44;   // 初始，后面会基于画布大小调整
+(function() {
+    // ----- 画布元素 -----
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    let canvasW, canvasH;
+    let centerX, centerY, centerR = 32;
+    let itemSize = 36;          // 缩小图标尺寸
 
-        // ----- 游戏状态 -----
-        let gamePhase = 'listen';      // 'listen', 'playing'
-        let listenPoints = [];
-        let foundCount = 0;
-        const NEED_LISTEN = 3;
+    // ----- 游戏状态 -----
+    let gamePhase = 'listen';
+    let listenPoints = [];
+    let foundCount = 0;
+    const NEED_LISTEN = 3;
 
-        let silence = 100;
-        let timeLeft = 60;
-        let timerInterval = null;
-        let gameActive = false;
-        let animationId = null;
+    let silence = 100;
+    let timeLeft = 60;
+    let timerInterval = null;
+    let gameActive = false;
+    let animationId = null;
 
-        let entities = [];
-        let spawnCounter = 0;
-        let SPAWN_DELAY = 32;   // 降低生成频率，避免过多
+    let entities = [];
+    let spawnCounter = 0;
+    let SPAWN_DELAY = 34;        // 减慢生成速度
 
-        let auraRadius = 0;
-        let maxAura = 0;
-        let auraBase = 0;        // 从100%寂静值开始扩张的基准半径
+    let auraRadius = 0;
+    let targetAuraRadius = 0;
+    let maxAura = 200;
+    let auraExpandSpeed = 2.5;    // 光环扩张速度（像素/帧）
 
-        let audioCtx = null;
-        let ambientInterval = null;
+    let audioCtx = null;
+    let ambientInterval = null;
 
-        // ----- 辅助函数 -----
-        function resizeCanvas() {
-            // 全屏竖屏：直接使用窗口宽高
-            canvasW = window.innerWidth;
-            canvasH = window.innerHeight;
-            canvas.width = canvasW;
-            canvas.height = canvasH;
-            canvas.style.width = canvasW + 'px';
-            canvas.style.height = canvasH + 'px';
-            centerX = canvasW / 2;
-            centerY = canvasH / 2;
-            // 中心圆半径适度放大，但保持比例
-            centerR = Math.min(55, canvasW * 0.12, canvasH * 0.1);
-            // 图标大小适中，约 40~48 像素，方便点击
-            itemSize = Math.min(48, Math.max(36, canvasW * 0.09));
-            // 最大光环半径：画布宽度一半左右，不超过高度一半
-            maxAura = Math.min(canvasW * 0.45, canvasH * 0.4);
-            auraBase = maxAura * 0.3;   // 光环初始扩张起点半径
+    // ----- 辅助函数 -----
+    function resizeCanvas() {
+        const container = canvas.parentElement;
+        const w = container.clientWidth;
+        let width = w;            // 全宽
+        let height = width * 0.75; // 保持比例，但可适应竖屏
+        canvas.width = width;
+        canvas.height = height;
+        canvasW = width;
+        canvasH = height;
+        centerX = canvasW / 2;
+        centerY = canvasH / 2;
+        centerR = Math.min(38, canvasW * 0.09);
+        itemSize = Math.min(38, canvasW * 0.09);  // 图标更小，更精致
+        maxAura = Math.min(canvasW, canvasH) * 0.55;
+    }
+
+    function initAudio() {
+        if(!audioCtx && window.AudioContext) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+    }
+
+    function playSound(freq, dur, vol=0.2) {
+        if(!audioCtx) return;
+        try {
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.frequency.value = freq;
+            gain.gain.setValueAtTime(vol, now);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now+dur);
+            osc.start();
+            osc.stop(now+dur);
+        } catch(e) {}
+    }
+
+    function playPlaneSound() {
+        if(!audioCtx) return;
+        try {
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(120, now);
+            osc.frequency.linearRampToValueAtTime(240, now+1.8);
+            gain.gain.setValueAtTime(0, now);
+            gain.gain.linearRampToValueAtTime(0.25, now+0.4);
+            gain.gain.linearRampToValueAtTime(0.01, now+2);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(now+2);
+        } catch(e) {}
+    }
+
+    function showToast(msg, duration=1800) {
+        const div = document.createElement('div');
+        div.className = 'toast';
+        div.innerText = msg;
+        document.body.appendChild(div);
+        setTimeout(() => div.remove(), duration);
+    }
+
+    // ----- 聆听模式 -----
+    function initListenMode() {
+        const oldRings = document.querySelectorAll('.glow-ring');
+        oldRings.forEach(r => r.remove());
+        listenPoints = [];
+
+        const canvasRect = canvas.getBoundingClientRect();
+        const parentRect = canvas.parentElement.getBoundingClientRect();
+        const offsetX = canvasRect.left - parentRect.left;
+        const offsetY = canvasRect.top - parentRect.top;
+
+        const minX = offsetX + 20;
+        const maxX = offsetX + canvasRect.width - 20;
+        const minY = offsetY + 20;
+        const maxY = offsetY + canvasRect.height - 20;
+
+        for(let i = 0; i < NEED_LISTEN + 1; i++) {
+            const x = minX + Math.random() * (maxX - minX);
+            const y = minY + Math.random() * (maxY - minY);
+            listenPoints.push({ x, y, id: i });
+            const ring = document.createElement('div');
+            ring.className = 'glow-ring';
+            ring.style.left = x + 'px';
+            ring.style.top = y + 'px';
+            canvas.parentElement.appendChild(ring);
         }
 
-        function initAudio() {
-            if(!audioCtx && window.AudioContext) {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        foundCount = 0;
+        gamePhase = 'listen';
+        gameActive = false;
+
+        if(ambientInterval) clearInterval(ambientInterval);
+        ambientInterval = setInterval(() => {
+            if(gamePhase === 'listen' && audioCtx) {
+                playSound(500 + Math.random()*400, 0.2, 0.05);
             }
-        }
+        }, 2500);
+        drawListenMessage();
+    }
 
-        function playSound(freq, dur, vol=0.2) {
-            if(!audioCtx) return;
-            try {
-                const now = audioCtx.currentTime;
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-                osc.frequency.value = freq;
-                gain.gain.setValueAtTime(vol, now);
-                gain.gain.exponentialRampToValueAtTime(0.0001, now+dur);
-                osc.start();
-                osc.stop(now+dur);
-            } catch(e) {}
-        }
+    function drawListenMessage() {
+        ctx.clearRect(0, 0, canvasW, canvasH);
+        ctx.fillStyle = '#2c5e3a';
+        ctx.fillRect(0, 0, canvasW, canvasH);
+        ctx.fillStyle = '#e0e8c0';
+        ctx.font = 'bold 20px system-ui';
+        ctx.textAlign = 'center';
+        ctx.fillText('🌲 聆听森林的寂静 🌲', centerX, centerY - 20);
+        ctx.font = '14px system-ui';
+        ctx.fillStyle = '#c0e0a0';
+        ctx.fillText('点击闪烁的光圈', centerX, centerY + 20);
+    }
 
-        function playPlaneSound() {
-            if(!audioCtx) return;
-            try {
-                const now = audioCtx.currentTime;
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(120, now);
-                osc.frequency.linearRampToValueAtTime(240, now+1.8);
-                gain.gain.setValueAtTime(0, now);
-                gain.gain.linearRampToValueAtTime(0.25, now+0.4);
-                gain.gain.linearRampToValueAtTime(0.01, now+2);
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-                osc.start();
-                osc.stop(now+2);
-            } catch(e) {}
-        }
+    function handleListenTap(clientX, clientY) {
+        const parentRect = canvas.parentElement.getBoundingClientRect();
+        const clickX = clientX - parentRect.left;
+        const clickY = clientY - parentRect.top;
 
-        function showToast(msg, duration=1800) {
-            const div = document.createElement('div');
-            div.className = 'toast';
-            div.innerText = msg;
-            document.body.appendChild(div);
-            setTimeout(() => div.remove(), duration);
-        }
-
-        // ----- 聆听模式 (光圈固定在canvas区域内) -----
-        function initListenMode() {
-            const oldRings = document.querySelectorAll('.glow-ring');
-            oldRings.forEach(r => r.remove());
-            listenPoints = [];
-
-            // 获取canvas元素的精确位置（绝对定位相对于视口）
-            const canvasRect = canvas.getBoundingClientRect();
-            const wrapperRect = document.querySelector('.game-wrapper').getBoundingClientRect();
-            // 光圈是相对于 .game-wrapper 定位的，需要计算偏移
-            const offsetX = canvasRect.left - wrapperRect.left;
-            const offsetY = canvasRect.top - wrapperRect.top;
-
-            const minX = offsetX + 30;
-            const maxX = offsetX + canvasRect.width - 30;
-            const minY = offsetY + 60;   // 避开顶部HUD
-            const maxY = offsetY + canvasRect.height - 60;
-
-            for(let i = 0; i < NEED_LISTEN + 1; i++) {
-                const x = minX + Math.random() * (maxX - minX);
-                const y = minY + Math.random() * (maxY - minY);
-                listenPoints.push({ x, y, id: i });
-                const ring = document.createElement('div');
-                ring.className = 'glow-ring';
-                ring.style.left = x + 'px';
-                ring.style.top = y + 'px';
-                document.querySelector('.game-wrapper').appendChild(ring);
-            }
-
-            foundCount = 0;
-            gamePhase = 'listen';
-            gameActive = false;
-
-            if(ambientInterval) clearInterval(ambientInterval);
-            ambientInterval = setInterval(() => {
-                if(gamePhase === 'listen' && audioCtx) {
-                    playSound(500 + Math.random()*400, 0.2, 0.05);
-                }
-            }, 2500);
-            drawListenMessage();
-        }
-
-        function drawListenMessage() {
-            if(!ctx) return;
-            ctx.clearRect(0, 0, canvasW, canvasH);
-            ctx.fillStyle = '#2c5e3a';
-            ctx.fillRect(0, 0, canvasW, canvasH);
-            ctx.fillStyle = '#e0e8c0';
-            ctx.font = 'bold 22px system-ui';
-            ctx.textAlign = 'center';
-            ctx.fillText('🌲 聆听森林的寂静 🌲', centerX, centerY - 30);
-            ctx.font = '16px system-ui';
-            ctx.fillStyle = '#c0e0a0';
-            ctx.fillText('点击闪烁的光圈', centerX, centerY + 20);
-        }
-
-        function handleListenTap(clientX, clientY) {
-            const parentRect = document.querySelector('.game-wrapper').getBoundingClientRect();
-            const clickX = clientX - parentRect.left;
-            const clickY = clientY - parentRect.top;
-
-            for(let i = 0; i < listenPoints.length; i++) {
-                const p = listenPoints[i];
-                const dist = Math.hypot(clickX - p.x, clickY - p.y);
-                if(dist < 45) {
-                    listenPoints.splice(i,1);
-                    const rings = document.querySelectorAll('.glow-ring');
-                    for(let ring of rings) {
-                        const left = parseFloat(ring.style.left);
-                        const top = parseFloat(ring.style.top);
-                        if(Math.abs(left - p.x) < 5 && Math.abs(top - p.y) < 5) {
-                            ring.remove();
-                            break;
-                        }
-                    }
-                    foundCount++;
-                    showToast(`✨ 这里有一平方英寸的寂静，它非常珍贵。 (${foundCount}/${NEED_LISTEN})`, 1800);
-                    if(foundCount >= NEED_LISTEN) {
-                        gamePhase = 'transition';
-                        if(ambientInterval) clearInterval(ambientInterval);
-                        showToast("✈️ 远处传来飞机的轰鸣...", 2000);
-                        playPlaneSound();
-                        setTimeout(() => {
-                            document.querySelectorAll('.glow-ring').forEach(r => r.remove());
-                            startGameCore();
-                        }, 2000);
-                    }
-                    break;
-                }
-            }
-        }
-
-        // ----- 核心游戏 -----
-        function startGameCore() {
-            resizeCanvas();
-            silence = 100;
-            timeLeft = 60;
-            entities = [];
-            spawnCounter = 0;
-            gameActive = true;
-            gamePhase = 'playing';
-            auraRadius = 0;   // 初始无光环
-            updateUI();
-
-            if(timerInterval) clearInterval(timerInterval);
-            timerInterval = setInterval(() => {
-                if(!gameActive) return;
-                if(timeLeft <= 1) {
-                    timeLeft = 0;
-                    updateUI();
-                    endGame();
-                } else {
-                    timeLeft--;
-                    updateUI();
-                }
-            }, 1000);
-
-            if(animationId) cancelAnimationFrame(animationId);
-            animationId = requestAnimationFrame(drawLoop);
-        }
-
-        function spawnEntity() {
-            if(!gameActive) return;
-            const isNatural = Math.random() < 0.6;   // 自然声略多
-            const emoji = isNatural ?
-                ['🐦','🦋','🌿','💧','🍃'][Math.floor(Math.random()*5)] :
-                ['✈️','📱','🚗','🔊','🏗️'][Math.floor(Math.random()*5)];
-            const size = itemSize;
-            const edge = Math.floor(Math.random()*4);
-            let x, y, vx, vy;
-            // 速度大幅降低，让玩家更容易点击
-            const speedBase = 1.6 * (canvasW / 400);
-            if(edge === 0) { x = -size; y = Math.random() * canvasH; vx = speedBase * 0.9; vy = (centerY - y) * 0.008; }
-            else if(edge === 1) { x = canvasW + size; y = Math.random() * canvasH; vx = -speedBase * 0.9; vy = (centerY - y) * 0.008; }
-            else if(edge === 2) { x = Math.random() * canvasW; y = -size; vx = (centerX - x) * 0.008; vy = speedBase * 0.9; }
-            else { x = Math.random() * canvasW; y = canvasH + size; vx = (centerX - x) * 0.008; vy = -speedBase * 0.9; }
-            entities.push({
-                x, y, vx, vy, size,
-                emoji, type: isNatural ? 'natural' : 'noise'
-            });
-        }
-
-        function updateEntities() {
-            const hitDist = centerR + 12;
-            for(let i=0; i<entities.length; i++) {
-                const e = entities[i];
-                let speedMul = 1;
-                if(silence >= 100 && auraRadius > 0) {
-                    const distToCenter = Math.hypot(e.x + e.size/2 - centerX, e.y + e.size/2 - centerY);
-                    if(distToCenter < auraRadius && e.type === 'noise') {
-                        speedMul = 0.55;
+        for(let i = 0; i < listenPoints.length; i++) {
+            const p = listenPoints[i];
+            const dist = Math.hypot(clickX - p.x, clickY - p.y);
+            if(dist < 35) {
+                listenPoints.splice(i,1);
+                const rings = document.querySelectorAll('.glow-ring');
+                for(let ring of rings) {
+                    const left = parseFloat(ring.style.left);
+                    const top = parseFloat(ring.style.top);
+                    if(Math.abs(left - p.x) < 5 && Math.abs(top - p.y) < 5) {
+                        ring.remove();
+                        break;
                     }
                 }
-                e.x += e.vx * speedMul;
-                e.y += e.vy * speedMul;
-                const dist = Math.hypot(e.x + e.size/2 - centerX, e.y + e.size/2 - centerY);
-                if(dist < hitDist) {
-                    if(e.type === 'natural') {
-                        silence = Math.min(100, silence + 10);
-                        playSound(880, 0.2, 0.2);
-                        showToast('🌿 自然之声 +10', 600);
-                    } else {
-                        silence = Math.max(0, silence - 10);
-                        playSound(140, 0.25, 0.3);
-                        showToast('💥 噪音污染 -10', 600);
-                        if(silence <= 0) endGame(false);
-                    }
-                    updateUI();
-                    entities.splice(i,1);
-                    i--;
-                    continue;
+                foundCount++;
+                showToast(`✨ 这里有一平方英寸的寂静，它非常珍贵。 (${foundCount}/${NEED_LISTEN})`, 1800);
+                if(foundCount >= NEED_LISTEN) {
+                    gamePhase = 'transition';
+                    if(ambientInterval) clearInterval(ambientInterval);
+                    showToast("✈️ 远处传来飞机的轰鸣...", 2000);
+                    playPlaneSound();
+                    setTimeout(() => {
+                        document.querySelectorAll('.glow-ring').forEach(r => r.remove());
+                        startGameCore();
+                    }, 2000);
                 }
-                if(e.x + e.size < -200 || e.x > canvasW+200 || e.y + e.size < -200 || e.y > canvasH+200) {
-                    entities.splice(i,1);
-                    i--;
-                }
-            }
-            // 更新光环半径：寂静值超过100的部分按比例扩大到最大半径
-            if(silence >= 100) {
-                let extra = silence - 100;
-                let ratio = Math.min(1, extra / 100);   // 从100到200，比例0~1
-                auraRadius = auraBase + (maxAura - auraBase) * ratio;
-            } else {
-                auraRadius = 0;
+                break;
             }
         }
+    }
 
-        function handleTap(clientX, clientY) {
-            if(gamePhase !== 'playing' || !gameActive) return;
-            const rect = canvas.getBoundingClientRect();
-            const scaleX = canvasW / rect.width;
-            const scaleY = canvasH / rect.height;
-            const tapX = (clientX - rect.left) * scaleX;
-            const tapY = (clientY - rect.top) * scaleY;
-            for(let i=0; i<entities.length; i++) {
-                const e = entities[i];
-                if(tapX >= e.x && tapX <= e.x + e.size && tapY >= e.y && tapY <= e.y + e.size) {
-                    if(e.type === 'natural') {
-                        silence = Math.max(0, silence - 1);
-                        playSound(330, 0.2, 0.15);
-                        showToast('🙊 误触自然 -1', 600);
-                    } else {
-                        playSound(200, 0.1, 0.1);
-                        showToast('🛡️ 拦截噪音', 400);
-                    }
-                    entities.splice(i,1);
-                    updateUI();
-                    break;
-                }
-            }
-        }
-
-        function updateUI() {
-            document.getElementById('silenceVal').innerText = Math.floor(silence);
-            document.getElementById('timerVal').innerText = Math.floor(timeLeft);
-        }
-
-        function endGame(isWin = null) {
-            if(!gameActive) return;
-            gameActive = false;
-            if(timerInterval) clearInterval(timerInterval);
-            const success = (timeLeft <= 0 && silence >= 100);
-            const msg = success ? "🎉 成功守护寂静！" : "💔 寂静被噪音吞没...";
-            showToast(msg, 2500);
-            const modal = document.createElement('div');
-            modal.className = 'modal';
-            modal.innerHTML = `
-                <div class="card">
-                    <h2>${success ? "✨ 胜利 ✨" : "❌ 失败"}</h2>
-                    <p>${success ? "你让寂静之环绽放，保护区初具雏形。" : "噪音侵蚀了最后一片寂静。"}</p>
-                    <button class="btn" id="replayGame">🔄 再次守护</button>
-                </div>
-            `;
-            document.body.appendChild(modal);
-            document.getElementById('replayGame').onclick = () => {
-                modal.remove();
-                resetFullGame();
-            };
-            if(animationId) cancelAnimationFrame(animationId);
-        }
-
-        function resetFullGame() {
-            if(timerInterval) clearInterval(timerInterval);
-            if(ambientInterval) clearInterval(ambientInterval);
-            if(animationId) cancelAnimationFrame(animationId);
-            gameActive = false;
-            gamePhase = 'listen';
-            entities = [];
-            silence = 100;
-            timeLeft = 60;
-            updateUI();
-            initListenMode();
-        }
-
-        function drawGame() {
-            ctx.clearRect(0,0,canvasW,canvasH);
-            const grad = ctx.createLinearGradient(0,0,0,canvasH);
-            grad.addColorStop(0,"#1e4a2e");
-            grad.addColorStop(1,"#0e2a1f");
-            ctx.fillStyle = grad;
-            ctx.fillRect(0,0,canvasW,canvasH);
-            for(const e of entities) {
-                ctx.font = `${e.size}px "Segoe UI Emoji"`;
-                ctx.fillStyle = e.type === 'natural' ? '#b8e4b0' : '#f0b0a0';
-                ctx.fillText(e.emoji, e.x, e.y + e.size/1.5);
-            }
-            ctx.beginPath();
-            ctx.arc(centerX, centerY, centerR, 0, Math.PI*2);
-            ctx.fillStyle = "#f9efc0";
-            ctx.fill();
-            ctx.strokeStyle = "#8cb87a";
-            ctx.lineWidth = 2.5;
-            ctx.stroke();
-            ctx.fillStyle = "#1e3a2a";
-            ctx.font = "bold 20px system-ui";
-            ctx.fillText("🌿", centerX-10, centerY+6);
-            if(silence >= 100 && auraRadius > 0) {
-                ctx.beginPath();
-                ctx.arc(centerX, centerY, auraRadius, 0, Math.PI*2);
-                ctx.fillStyle = "rgba(100, 200, 100, 0.12)";
-                ctx.fill();
-                ctx.strokeStyle = "#80c080";
-                ctx.setLineDash([6, 10]);
-                ctx.stroke();
-                ctx.setLineDash([]);
-                // 显示光环扩张百分比
-                let percent = Math.min(100, Math.floor((auraRadius - auraBase) / (maxAura - auraBase) * 100));
-                if(percent > 0) {
-                    ctx.fillStyle = "#e0ffc0";
-                    ctx.font = "12px monospace";
-                    ctx.fillText(`光环扩张 ${percent}%`, centerX+auraRadius-45, centerY-12);
-                }
-            }
-        }
-
-        function drawLoop() {
-            if(gamePhase === 'listen') {
-                drawListenMessage();
-                requestAnimationFrame(drawLoop);
-                return;
-            }
-            if(!gameActive) {
-                requestAnimationFrame(drawLoop);
-                return;
-            }
-            spawnCounter++;
-            if(spawnCounter >= SPAWN_DELAY) {
-                spawnCounter = 0;
-                spawnEntity();
-                if(entities.length > 35) entities.splice(0,8);
-            }
-            updateEntities();
-            drawGame();
-            requestAnimationFrame(drawLoop);
-        }
-
-        function bindEvents() {
-            canvas.addEventListener('click', (e) => {
-                e.preventDefault();
-                if(gamePhase === 'listen') {
-                    handleListenTap(e.clientX, e.clientY);
-                } else if(gamePhase === 'playing') {
-                    handleTap(e.clientX, e.clientY);
-                }
-            });
-            canvas.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                const touch = e.touches[0];
-                if(gamePhase === 'listen') {
-                    handleListenTap(touch.clientX, touch.clientY);
-                } else if(gamePhase === 'playing') {
-                    handleTap(touch.clientX, touch.clientY);
-                }
-            }, { passive: false });
-        }
-
-        function startGame() {
-            resizeCanvas();
-            initAudio();
-            bindEvents();
-            initListenMode();
-            drawLoop();
-        }
-
-        document.getElementById('startJourney').onclick = () => {
-            document.getElementById('rulesModal').style.display = 'none';
-            startGame();
-            if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-        };
-
-        window.addEventListener('resize', () => {
-            resizeCanvas();
-            if(gamePhase === 'listen') drawListenMessage();
-        });
+    // ----- 核心游戏 -----
+    function startGameCore() {
         resizeCanvas();
-    })();
+        silence = 100;
+        timeLeft = 60;
+        entities = [];
+        spawnCounter = 0;
+        gameActive = true;
+        gamePhase = 'playing';
+        auraRadius = 0;
+        targetAuraRadius = 0;
+        updateUI();
+
+        if(timerInterval) clearInterval(timerInterval);
+        timerInterval = setInterval(() => {
+            if(!gameActive) return;
+            if(timeLeft <= 1) {
+                timeLeft = 0;
+                updateUI();
+                endGame();
+            } else {
+                timeLeft--;
+                updateUI();
+            }
+        }, 1000);
+
+        if(animationId) cancelAnimationFrame(animationId);
+        animationId = requestAnimationFrame(drawLoop);
+    }
+
+    function spawnEntity() {
+        if(!gameActive) return;
+        const isNatural = Math.random() < 0.55;
+        const emoji = isNatural ?
+            ['🐦','🦋','🌿','💧','🍃'][Math.floor(Math.random()*5)] :
+            ['✈️','📱','🚗','🔊','🏗️'][Math.floor(Math.random()*5)];
+        const size = itemSize;
+        const edge = Math.floor(Math.random()*4);
+        let x, y, vx, vy;
+        // 速度大幅降低
+        const speedBase = 1.6 * (canvasW / 400);
+        if(edge === 0) { x = -size; y = Math.random() * canvasH; vx = speedBase * 0.9; vy = (centerY - y) * 0.008; }
+        else if(edge === 1) { x = canvasW + size; y = Math.random() * canvasH; vx = -speedBase * 0.9; vy = (centerY - y) * 0.008; }
+        else if(edge === 2) { x = Math.random() * canvasW; y = -size; vx = (centerX - x) * 0.008; vy = speedBase * 0.9; }
+        else { x = Math.random() * canvasW; y = canvasH + size; vx = (centerX - x) * 0.008; vy = -speedBase * 0.9; }
+        entities.push({
+            x, y, vx, vy, size,
+            emoji, type: isNatural ? 'natural' : 'noise'
+        });
+    }
+
+    function updateEntities() {
+        const hitDist = centerR + 12;
+        for(let i=0; i<entities.length; i++) {
+            const e = entities[i];
+            let speedMul = 1;
+            if(silence >= 100 && auraRadius > 0) {
+                const distToCenter = Math.hypot(e.x + e.size/2 - centerX, e.y + e.size/2 - centerY);
+                if(distToCenter < auraRadius && e.type === 'noise') {
+                    speedMul = 0.55;
+                }
+            }
+            e.x += e.vx * speedMul;
+            e.y += e.vy * speedMul;
+            const dist = Math.hypot(e.x + e.size/2 - centerX, e.y + e.size/2 - centerY);
+            if(dist < hitDist) {
+                if(e.type === 'natural') {
+                    silence = Math.min(100, silence + 10);
+                    playSound(880, 0.2, 0.2);
+                    showToast('🌿 自然之声 +10', 600);
+                } else {
+                    silence = Math.max(0, silence - 10);
+                    playSound(140, 0.25, 0.3);
+                    showToast('💥 噪音污染 -10', 600);
+                    if(silence <= 0) endGame(false);
+                }
+                updateUI();
+                entities.splice(i,1);
+                i--;
+                continue;
+            }
+            if(e.x + e.size < -200 || e.x > canvasW+200 || e.y + e.size < -200 || e.y > canvasH+200) {
+                entities.splice(i,1);
+                i--;
+            }
+        }
+
+        // 缓慢扩张光环
+        if(silence >= 100) {
+            targetAuraRadius = maxAura * 0.85;
+            if(auraRadius < targetAuraRadius) {
+                auraRadius = Math.min(targetAuraRadius, auraRadius + auraExpandSpeed);
+            }
+        } else {
+            targetAuraRadius = 0;
+            if(auraRadius > 0) {
+                auraRadius = Math.max(0, auraRadius - auraExpandSpeed * 1.5);
+            }
+        }
+    }
+
+    function handleTap(clientX, clientY) {
+        if(gamePhase !== 'playing' || !gameActive) return;
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvasW / rect.width;
+        const scaleY = canvasH / rect.height;
+        const tapX = (clientX - rect.left) * scaleX;
+        const tapY = (clientY - rect.top) * scaleY;
+        // 扩大点击判定区域 (+6px) 便于点按
+        const hitMargin = 6;
+        for(let i=0; i<entities.length; i++) {
+            const e = entities[i];
+            if(tapX >= e.x - hitMargin && tapX <= e.x + e.size + hitMargin &&
+               tapY >= e.y - hitMargin && tapY <= e.y + e.size + hitMargin) {
+                if(e.type === 'natural') {
+                    silence = Math.max(0, silence - 1);
+                    playSound(330, 0.2, 0.15);
+                    showToast('🙊 误触自然 -1', 600);
+                } else {
+                    playSound(200, 0.1, 0.1);
+                    showToast('🛡️ 拦截噪音', 400);
+                }
+                entities.splice(i,1);
+                updateUI();
+                break;
+            }
+        }
+    }
+
+    function updateUI() {
+        document.getElementById('silenceVal').innerText = Math.floor(silence);
+        document.getElementById('timerVal').innerText = Math.floor(timeLeft);
+    }
+
+    function endGame() {
+        if(!gameActive) return;
+        gameActive = false;
+        if(timerInterval) clearInterval(timerInterval);
+        const success = (timeLeft <= 0 && silence >= 100);
+        const msg = success ? "🎉 成功守护寂静！" : "💔 寂静被噪音吞没...";
+        showToast(msg, 2500);
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.innerHTML = `
+            <div class="card">
+                <h2>${success ? "✨ 胜利 ✨" : "❌ 失败"}</h2>
+                <p>${success ? "你让寂静之环绽放，保护区初具雏形。" : "噪音侵蚀了最后一片寂静。"}</p>
+                <button class="btn" id="replayGame">🔄 再次守护</button>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        document.getElementById('replayGame').onclick = () => {
+            modal.remove();
+            resetFullGame();
+        };
+        if(animationId) cancelAnimationFrame(animationId);
+    }
+
+    function resetFullGame() {
+        if(timerInterval) clearInterval(timerInterval);
+        if(ambientInterval) clearInterval(ambientInterval);
+        if(animationId) cancelAnimationFrame(animationId);
+        gameActive = false;
+        gamePhase = 'listen';
+        entities = [];
+        silence = 100;
+        timeLeft = 60;
+        updateUI();
+        initListenMode();
+    }
+
+    function drawGame() {
+        ctx.clearRect(0,0,canvasW,canvasH);
+        const grad = ctx.createLinearGradient(0,0,0,canvasH);
+        grad.addColorStop(0,"#1e4a2e");
+        grad.addColorStop(1,"#0e2a1f");
+        ctx.fillStyle = grad;
+        ctx.fillRect(0,0,canvasW,canvasH);
+        for(const e of entities) {
+            ctx.font = `${e.size}px "Segoe UI Emoji"`;
+            ctx.fillStyle = e.type === 'natural' ? '#b8e4b0' : '#f0b0a0';
+            ctx.fillText(e.emoji, e.x, e.y + e.size/1.5);
+        }
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, centerR, 0, Math.PI*2);
+        ctx.fillStyle = "#f9efc0";
+        ctx.fill();
+        ctx.strokeStyle = "#8cb87a";
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+        ctx.fillStyle = "#1e3a2a";
+        ctx.font = "bold 18px system-ui";
+        ctx.fillText("🌿", centerX-10, centerY+6);
+        if(auraRadius > 0) {
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, auraRadius, 0, Math.PI*2);
+            ctx.fillStyle = "rgba(100, 200, 100, 0.12)";
+            ctx.fill();
+            ctx.strokeStyle = "#80c080";
+            ctx.setLineDash([6, 10]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.fillStyle = "#e0ffc0";
+            ctx.font = "12px monospace";
+            ctx.fillText("寂静辐射区", centerX+auraRadius-40, centerY-12);
+        }
+    }
+
+    function drawLoop() {
+        if(gamePhase === 'listen') {
+            drawListenMessage();
+            requestAnimationFrame(drawLoop);
+            return;
+        }
+        if(!gameActive) {
+            requestAnimationFrame(drawLoop);
+            return;
+        }
+        spawnCounter++;
+        if(spawnCounter >= SPAWN_DELAY) {
+            spawnCounter = 0;
+            spawnEntity();
+            if(entities.length > 35) entities.splice(0,8);
+        }
+        updateEntities();
+        drawGame();
+        requestAnimationFrame(drawLoop);
+    }
+
+    function bindEvents() {
+        canvas.addEventListener('click', (e) => {
+            e.preventDefault();
+            if(gamePhase === 'listen') handleListenTap(e.clientX, e.clientY);
+            else if(gamePhase === 'playing') handleTap(e.clientX, e.clientY);
+        });
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            if(gamePhase === 'listen') handleListenTap(touch.clientX, touch.clientY);
+            else if(gamePhase === 'playing') handleTap(touch.clientX, touch.clientY);
+        }, { passive: false });
+    }
+
+    function startGame() {
+        resizeCanvas();
+        initAudio();
+        bindEvents();
+        initListenMode();
+        drawLoop();
+    }
+
+    document.getElementById('startJourney').onclick = () => {
+        document.getElementById('rulesModal').style.display = 'none';
+        startGame();
+        if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+    };
+
+    window.addEventListener('resize', () => {
+        resizeCanvas();
+        if(gamePhase === 'listen') drawListenMessage();
+    });
+    resizeCanvas();
+})();
 </script>
 </body>
 </html>
