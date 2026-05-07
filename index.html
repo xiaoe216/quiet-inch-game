@@ -127,7 +127,7 @@
     .overlay p { margin: 0.5rem 0; line-height: 1.55; font-size: 0.88rem; max-width: 320px; }
     .overlay h2 { margin: 0 0 8px; font-size: 1.05rem; }
     .hidden { display: none !important; }
-    /* Level 1 forest */
+    /* Level 1 forest - 微光光圈 */
     #listen {
       position: absolute;
       inset: 0;
@@ -142,19 +142,30 @@
       background: radial-gradient(ellipse 120% 80% at 50% 100%, transparent 40%, rgba(0,0,0,0.35) 100%);
       pointer-events: none;
     }
+    /* 微弱闪光光圈 (替换原来的脉冲) */
     .hint-pulse {
       position: absolute;
       width: 44px;
       height: 44px;
       border-radius: 50%;
-      border: 2px solid rgba(110, 207, 142, 0.35);
+      border: 1.5px solid rgba(140, 210, 160, 0.55);
+      background: radial-gradient(circle, rgba(110, 207, 142, 0.08) 0%, rgba(110, 207, 142, 0.0) 70%);
       transform: translate(-50%, -50%);
       pointer-events: none;
-      animation: pulse 2.2s ease-in-out infinite;
+      animation: softGlow 2.8s ease-in-out infinite;
+      box-shadow: 0 0 10px rgba(110, 207, 142, 0.25);
     }
-    @keyframes pulse {
-      0%, 100% { opacity: 0.3; transform: translate(-50%, -50%) scale(0.9); }
-      50% { opacity: 0.85; transform: translate(-50%, -50%) scale(1.15); }
+    @keyframes softGlow {
+      0%, 100% {
+        opacity: 0.25;
+        transform: translate(-50%, -50%) scale(0.95);
+        box-shadow: 0 0 6px rgba(110, 207, 142, 0.2);
+      }
+      50% {
+        opacity: 0.65;
+        transform: translate(-50%, -50%) scale(1.08);
+        box-shadow: 0 0 18px rgba(110, 207, 142, 0.4);
+      }
     }
     .toast {
       position: absolute;
@@ -260,6 +271,15 @@
       border: 1px solid rgba(255,255,255,0.15);
       cursor: pointer;
     }
+    /* 游戏说明弹窗独立样式 */
+    .intro-card {
+      background: #1f2c24;
+      border: 1px solid rgba(110,207,142,0.4);
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    .intro-card h3 { color: var(--accent); margin-bottom: 12px; }
+    .intro-card ul { text-align: left; padding-left: 20px; margin: 12px 0; font-size: 0.8rem; }
   </style>
 </head>
 <body>
@@ -298,6 +318,7 @@
 (function () {
   "use strict";
 
+  // ---------- 全局常量 ----------
   const LEVEL_TITLES = [
     "",
     "关卡一 · 寂静是一种资源",
@@ -307,7 +328,6 @@
     "关卡五 · 立法的重量",
     "关卡六 · 永久保护区",
   ];
-
   const REGIONS = [
     { id: "amz", name: "亚马逊", cost: 35 },
     { id: "alp", name: "阿尔卑斯", cost: 35 },
@@ -316,6 +336,7 @@
     { id: "bor", name: "北方针叶林", cost: 35 },
   ];
 
+  // DOM 元素
   const canvas = document.getElementById("game");
   const ctx = canvas.getContext("2d");
   const listenEl = document.getElementById("listen");
@@ -333,6 +354,7 @@
   let DPR = Math.min(window.devicePixelRatio || 1, 2);
   let W = 0, H = 0, CX = 0, CY = 0;
 
+  // ---------- 游戏核心状态 ----------
   const state = {
     level: 0,
     score: 0,
@@ -359,8 +381,10 @@
     drawPath: [],
     drawing: false,
     finaleReady: false,
+    gameActive: true,     // 游戏是否进行中（避免结束后继续生成）
   };
 
+  // 辅助函数
   function resize() {
     const wrap = document.getElementById("stage-wrap");
     const rect = wrap.getBoundingClientRect();
@@ -375,10 +399,8 @@
     CY = H / 2;
     state.auraMax = Math.hypot(W, H) * 0.55;
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
-    const cssW = rect.width;
-    const cssH = rect.height;
-    state._cssW = cssW;
-    state._cssH = cssH;
+    state._cssW = rect.width;
+    state._cssH = rect.height;
   }
 
   function showToast(msg, ms = 3200) {
@@ -389,21 +411,38 @@
     setTimeout(() => t.remove(), ms);
   }
 
+  function updateHud() {
+    scoreEl.textContent = String(state.score);
+    silencePct.textContent = Math.round(state.silence) + "%";
+    silenceBar.style.width = state.silence + "%";
+    silenceBar.style.background =
+      state.silence > 60 ? "linear-gradient(90deg, #4a9d6a, #6ecf8e)"
+      : state.silence > 30 ? "linear-gradient(90deg, #9d8a4a, #e8c84a)"
+      : "linear-gradient(90deg, #9d4a4a, #e07060)";
+    if (state.level === 2) {
+      extraHud.textContent = "坚持 " + Math.max(0, Math.ceil(state.l2Timer)) + " 秒";
+    } else if (state.level === 3) {
+      extraHud.textContent = "光环 " + Math.round((state.auraR / state.auraMax) * 100) + "%";
+    } else if (state.level === 4) {
+      extraHud.textContent = "点击地图亮点消耗分数救援";
+    } else if (state.level === 6) {
+      extraHud.textContent = state.finaleReady ? "画闭合区域" : "阅读说明";
+    } else extraHud.textContent = "";
+  }
+
   function setLevel(n) {
+    if (!state.gameActive) return;
     state.level = n;
     levelTitleEl.textContent = LEVEL_TITLES[n] || "";
     listenEl.classList.toggle("hidden", n !== 1);
     mapPanel.classList.toggle("hidden", n < 4);
     canvas.classList.toggle("hidden", n === 1);
     if (n === 1) setupListen();
-    if (n >= 2) {
+    if (n === 2) {
       canvas.classList.remove("hidden");
       state.entities = [];
       state.spawnAcc = 0;
       state.goodSpawnAcc = 0;
-      state.lastT = performance.now();
-    }
-    if (n === 2) {
       state.silence = 100;
       state.l2Timer = state.l2Duration;
       state.noiseMult = 1;
@@ -429,19 +468,17 @@
     updateHud();
   }
 
-  /* ——— Audio (simple Web Audio) ——— */
+  // ---------- 音频 ----------
   function ensureAudio() {
     if (state.audioCtx) return;
     const AC = window.AudioContext || window.webkitAudioContext;
     if (!AC) return;
     state.audioCtx = new AC();
   }
-
   function resumeAudio() {
     ensureAudio();
     if (state.audioCtx && state.audioCtx.state === "suspended") state.audioCtx.resume();
   }
-
   function ambientLoop() {
     if (state.muted || !state.audioCtx || state.level !== 1) return;
     const ac = state.audioCtx;
@@ -461,7 +498,6 @@
     noise.stop(t + 2);
     if (state.level === 1 && !state.muted) setTimeout(ambientLoop, 1800);
   }
-
   function chirp() {
     if (state.muted || !state.audioCtx) return;
     const ac = state.audioCtx;
@@ -477,7 +513,6 @@
     o.start();
     o.stop(ac.currentTime + 0.15);
   }
-
   function playPlaneSweep() {
     if (state.muted || !state.audioCtx) return;
     const ac = state.audioCtx;
@@ -496,20 +531,17 @@
     o.start();
     o.stop(ac.currentTime + 2.6);
   }
-
   setInterval(() => {
     if (state.level === 1 && !state.muted && state.audioCtx) chirp();
   }, 2200 + Math.random() * 1800);
-
   muteBtn.addEventListener("click", () => {
     state.muted = !state.muted;
     muteBtn.textContent = state.muted ? "音效：关" : "音效：开";
   });
 
-  /* ——— Level 1 ——— */
-  const SILENCE_TARGETS = 3;
+  // ---------- 关卡1：聆听寂静点 (微弱闪光光圈) ----------
   let listenTargets = [];
-
+  const SILENCE_TARGETS = 3;
   function setupListen() {
     listenEl.innerHTML = "";
     state.l1Found = new Set();
@@ -527,8 +559,8 @@
       listenEl.appendChild(hint);
     }
   }
-
   function onListenTap(clientX, clientY) {
+    if (!state.gameActive || state.level !== 1) return;
     const rect = listenEl.getBoundingClientRect();
     const x = clientX - rect.left;
     const y = clientY - rect.top;
@@ -536,22 +568,24 @@
       if (state.l1Found.has(t.id)) continue;
       if (Math.hypot(x - t.x, y - t.y) < t.r) {
         state.l1Found.add(t.id);
-        showToast("这里有一平方英寸的寂静，它非常珍贵。");
+        showToast("✨ 这里有一平方英寸的寂静，它非常珍贵。");
+        chirp();
         if (state.l1Found.size >= SILENCE_TARGETS) {
+          showToast("你已察觉寂静的价值… 噪音即将到来。");
           setTimeout(() => setLevel(2), 1500);
         }
         break;
       }
     }
   }
-
   listenEl.addEventListener("pointerdown", (e) => {
     e.preventDefault();
     onListenTap(e.clientX, e.clientY);
   });
 
-  /* ——— Entities ——— */
+  // ---------- 实体：噪音 / 自然声 ----------
   function spawnNoise() {
+    if (!state.gameActive) return;
     const edge = Math.floor(Math.random() * 4);
     let x, y, vx, vy;
     const sp = (0.35 + Math.random() * 0.25) * H * 0.012 * state.noiseMult;
@@ -567,8 +601,8 @@
       label: types[Math.floor(Math.random() * types.length)],
     });
   }
-
   function spawnGood() {
+    if (!state.gameActive) return;
     const ang = Math.random() * Math.PI * 2;
     const dist = Math.max(W, H) * 0.55;
     const x = CX + Math.cos(ang) * dist;
@@ -585,14 +619,8 @@
       label: "🌿",
     });
   }
-
-  function distToCenter(e) {
-    return Math.hypot(e.x - CX, e.y - CY);
-  }
-
-  function inAura(e) {
-    return distToCenter(e) < state.auraR;
-  }
+  function distToCenter(e) { return Math.hypot(e.x - CX, e.y - CY); }
+  function inAura(e) { return distToCenter(e) < state.auraR; }
 
   function updateEntities(dt) {
     const hitR = 42 * DPR;
@@ -608,10 +636,10 @@
       }
       e.x += e.vx * mul * (dt / 16);
       e.y += e.vy * mul * (dt / 16);
-
       if (e.kind === "bad" && distToCenter(e) < hitR) {
         state.silence = Math.max(0, state.silence - 10);
         state.entities.splice(i, 1);
+        if (state.silence <= 0) gameOver("寂静已被噪音吞没。");
         continue;
       }
       if (e.x < -80 || e.x > W + 80 || e.y < -80 || e.y > H + 80) {
@@ -621,6 +649,7 @@
   }
 
   function tryTapWorld(cssX, cssY) {
+    if (!state.gameActive) return false;
     const x = cssX * DPR;
     const y = cssY * DPR;
     for (let i = state.entities.length - 1; i >= 0; i--) {
@@ -644,110 +673,51 @@
     return false;
   }
 
-  canvas.addEventListener("pointerdown", (e) => {
-    if (state.level < 2) return;
-    resumeAudio();
-    const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    if (state.level === 6) {
-      state.drawing = true;
-      state.drawPath = [{ x, y }];
-      return;
+  // 绘制
+  function drawEntities() {
+    for (const e of state.entities) {
+      ctx.font = `${e.s * 0.7}px "Segoe UI Emoji", "Apple Color Emoji"`;
+      ctx.fillStyle = e.kind === "good" ? "#c8f0d0" : "#f0c0b0";
+      ctx.shadowBlur = 0;
+      ctx.fillText(e.label, e.x - e.s/2, e.y + e.s/3);
+      // 简单外发光
+      ctx.shadowBlur = 6;
+      ctx.fillStyle = e.kind === "good" ? "#6ecf8e" : "#e07060";
+      ctx.fillText(e.label, e.x - e.s/2, e.y + e.s/3);
+      ctx.shadowBlur = 0;
     }
-    tryTapWorld(x, y);
-  });
-
-  canvas.addEventListener("pointermove", (e) => {
-    if (state.level !== 6 || !state.drawing) return;
-    const rect = canvas.getBoundingClientRect();
-    state.drawPath.push({ x: e.clientX - rect.left, y: e.clientY - rect.top });
-  });
-
-  canvas.addEventListener("pointerup", endDraw);
-  canvas.addEventListener("pointercancel", endDraw);
-
-  function endDraw() {
-    if (state.level !== 6 || !state.drawing) return;
-    state.drawing = false;
-    const p = state.drawPath;
-    if (p.length < 8) return;
-    const first = p[0], last = p[p.length - 1];
-    const closeDist = Math.hypot(last.x - first.x, last.y - first.y);
-    if (closeDist > state._cssW * 0.18) {
-      showToast("请画一条闭合的线（终点靠近起点）");
-      return;
+  }
+  function drawCenter() {
+    ctx.beginPath();
+    ctx.arc(CX, CY, 34, 0, Math.PI*2);
+    ctx.fillStyle = "#e8f0dd";
+    ctx.shadowBlur = 0;
+    ctx.fill();
+    ctx.strokeStyle = "#6ecf8e";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.fillStyle = "#0a1a12";
+    ctx.font = "bold 18px system-ui";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("🌿", CX, CY-2);
+    if (state.level >= 3) {
+      ctx.beginPath();
+      ctx.arc(CX, CY, state.auraR, 0, Math.PI*2);
+      ctx.fillStyle = "rgba(100, 200, 100, 0.12)";
+      ctx.fill();
+      ctx.setLineDash([5, 8]);
+      ctx.strokeStyle = "#9fde9f";
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      ctx.setLineDash([]);
     }
-    const area = polygonAreaPx(p.map((q) => ({ x: q.x * DPR, y: q.y * DPR })));
-    const km2 = Math.max(1, Math.round(area / (DPR * DPR) * 0.08));
-    showNameModal(km2);
   }
 
-  function polygonAreaPx(pts) {
-    let a = 0;
-    for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
-      a += pts[j].x * pts[i].y - pts[i].x * pts[j].y;
-    }
-    return Math.abs(a / 2);
-  }
-
-  function showNameModal(areaKm2) {
-    modalRoot.innerHTML = `
-      <div class="modal">
-        <div class="modal-card">
-          <h3>为你的保护区命名</h3>
-          <p>你已划定约 <strong>${areaKm2}</strong> 相对单位的寂静范围。</p>
-          <input type="text" id="reserve-name" maxlength="24" placeholder="例如：晨雾之耳" value="我的寂静保护区" />
-          <div class="modal-actions">
-            <button type="button" class="btn" id="confirm-name">确认建立</button>
-          </div>
-        </div>
-      </div>`;
-    document.getElementById("confirm-name").onclick = () => {
-      const name = (document.getElementById("reserve-name").value || "未命名保护区").trim();
-      modalRoot.innerHTML = "";
-      showVictory(name, areaKm2);
-    };
-  }
-
-  function showVictory(name, area) {
-    modalRoot.innerHTML = `
-      <div class="modal">
-        <div class="modal-card cert">
-          <h3>永久寂静保护区 · 证书</h3>
-          <p class="big">${name}</p>
-          <p>保护范围：约 ${area} 单位<br/>寂静指数：优 · 全球五地已绿 · 立法防线已巩固</p>
-          <p style="font-size:0.78rem;color:var(--muted)">灵感来自《一平方英寸的寂静》</p>
-          <button type="button" class="btn" id="replay">再玩一次</button>
-        </div>
-      </div>`;
-    document.getElementById("replay").onclick = () => {
-      modalRoot.innerHTML = "";
-      resetGame();
-    };
-    cancelAnimationFrame(state.raf);
-  }
-
-  function showModalIntro6() {
-    modalRoot.innerHTML = `
-      <div class="modal">
-        <div class="modal-card">
-          <h3>最终仪式 · 划定保护区</h3>
-          <p>在地图上用手指画出一个<strong>闭合区域</strong>（终点靠近起点），然后命名。你已满足建立条件。</p>
-          <button type="button" class="btn" id="begin-draw">开始划定</button>
-        </div>
-      </div>`;
-    document.getElementById("begin-draw").onclick = () => {
-      modalRoot.innerHTML = "";
-      state.finaleReady = true;
-    };
-  }
-
-  /* ——— Legislation ——— */
+  // 立法系统
   function scheduleNextLegislation() {
     state.nextLegislation = performance.now() + (14000 + Math.random() * 12000);
   }
-
   function showLegislationModal() {
     modalRoot.innerHTML = `
       <div class="modal">
@@ -784,13 +754,12 @@
     };
   }
 
-  /* ——— Map ——— */
+  // 地图系统
   function regionLevelClass(lv) {
     if (lv >= 2) return "green";
     if (lv >= 1) return "yellow";
     return "red";
   }
-
   function renderMap() {
     mapPanel.innerHTML = "<h3>寂静地图</h3>";
     REGIONS.forEach((r, idx) => {
@@ -814,7 +783,6 @@
       mapPanel.appendChild(row);
     });
   }
-
   function checkL4Complete() {
     if (state.level !== 4) return;
     if (!state.regions.every((x) => x >= 2)) return;
@@ -829,33 +797,125 @@
       showToast("继续守护：寂静需≥80%，并至少两次游说成功。", 4200);
     }
   }
-
   function canEnterFinale() {
     return state.silence >= 80 && state.regions.every((x) => x >= 2) && state.legislationResisted >= 2;
   }
 
-  /* ——— Loop ——— */
-  function updateHud() {
-    scoreEl.textContent = String(state.score);
-    silencePct.textContent = Math.round(state.silence) + "%";
-    silenceBar.style.width = state.silence + "%";
-    silenceBar.style.background =
-      state.silence > 60 ? "linear-gradient(90deg, #4a9d6a, #6ecf8e)"
-      : state.silence > 30 ? "linear-gradient(90deg, #9d8a4a, #e8c84a)"
-      : "linear-gradient(90deg, #9d4a4a, #e07060)";
-
-    if (state.level === 2) {
-      extraHud.textContent = "坚持 " + Math.max(0, Math.ceil(state.l2Timer)) + " 秒";
-    } else if (state.level === 3) {
-      extraHud.textContent = "光环 " + Math.round((state.auraR / state.auraMax) * 100) + "%";
-    } else if (state.level === 4) {
-      extraHud.textContent = "点击地图亮点消耗分数救援";
-    } else if (state.level === 6) {
-      extraHud.textContent = state.finaleReady ? "画闭合区域" : "阅读说明";
-    } else extraHud.textContent = "";
+  // 最终保护区
+  function showModalIntro6() {
+    modalRoot.innerHTML = `
+      <div class="modal">
+        <div class="modal-card">
+          <h3>最终仪式 · 划定保护区</h3>
+          <p>在地图上用手指画出一个<strong>闭合区域</strong>（终点靠近起点），然后命名。你已满足建立条件。</p>
+          <button type="button" class="btn" id="begin-draw">开始划定</button>
+        </div>
+      </div>`;
+    document.getElementById("begin-draw").onclick = () => {
+      modalRoot.innerHTML = "";
+      state.finaleReady = true;
+    };
+  }
+  function endDraw() {
+    if (state.level !== 6 || !state.drawing) return;
+    state.drawing = false;
+    const p = state.drawPath;
+    if (p.length < 8) return;
+    const first = p[0], last = p[p.length - 1];
+    const closeDist = Math.hypot(last.x - first.x, last.y - first.y);
+    if (closeDist > state._cssW * 0.18) {
+      showToast("请画一条闭合的线（终点靠近起点）");
+      return;
+    }
+    const area = polygonAreaPx(p.map((q) => ({ x: q.x * DPR, y: q.y * DPR })));
+    const km2 = Math.max(1, Math.round(area / (DPR * DPR) * 0.08));
+    showNameModal(km2);
+  }
+  function polygonAreaPx(pts) {
+    let a = 0;
+    for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+      a += pts[j].x * pts[i].y - pts[i].x * pts[j].y;
+    }
+    return Math.abs(a / 2);
+  }
+  function showNameModal(areaKm2) {
+    modalRoot.innerHTML = `
+      <div class="modal">
+        <div class="modal-card">
+          <h3>为你的保护区命名</h3>
+          <p>你已划定约 <strong>${areaKm2}</strong> 相对单位的寂静范围。</p>
+          <input type="text" id="reserve-name" maxlength="24" placeholder="例如：晨雾之耳" value="我的寂静保护区" />
+          <div class="modal-actions">
+            <button type="button" class="btn" id="confirm-name">确认建立</button>
+          </div>
+        </div>
+      </div>`;
+    document.getElementById("confirm-name").onclick = () => {
+      const name = (document.getElementById("reserve-name").value || "未命名保护区").trim();
+      modalRoot.innerHTML = "";
+      showVictory(name, areaKm2);
+    };
+  }
+  function showVictory(name, area) {
+    modalRoot.innerHTML = `
+      <div class="modal">
+        <div class="modal-card cert">
+          <h3>永久寂静保护区 · 证书</h3>
+          <p class="big">${name}</p>
+          <p>保护范围：约 ${area} 单位<br/>寂静指数：优 · 全球五地已绿 · 立法防线已巩固</p>
+          <p style="font-size:0.78rem;color:var(--muted)">灵感来自《一平方英寸的寂静》</p>
+          <button type="button" class="btn" id="replay">再玩一次</button>
+        </div>
+      </div>`;
+    document.getElementById("replay").onclick = () => {
+      modalRoot.innerHTML = "";
+      resetGame();
+    };
+    cancelAnimationFrame(state.raf);
+    state.gameActive = false;
   }
 
+  // 游戏结束 & 重置
+  function gameOver(msg) {
+    if (!state.gameActive) return;
+    state.gameActive = false;
+    showToast(msg);
+    setTimeout(() => {
+      if (confirm(msg + "\n点击确定重新开始")) resetGame();
+    }, 200);
+  }
+  function resetGame() {
+    cancelAnimationFrame(state.raf);
+    // 重置所有状态
+    state.level = 0;
+    state.score = 0;
+    state.silence = 100;
+    state.auraR = 48;
+    state.regions = REGIONS.map(() => 0);
+    state.legislationResisted = 0;
+    state.l4AllGreenAnnounced = false;
+    state.l4HintShown = false;
+    state.noiseMult = 1;
+    state.legisTimer = 0;
+    state.nextLegislation = 0;
+    state.l1Found.clear();
+    state.entities = [];
+    state.spawnAcc = 0;
+    state.goodSpawnAcc = 0;
+    state.drawPath = [];
+    state.drawing = false;
+    state.finaleReady = false;
+    state.gameActive = true;
+    // 重新开始游戏从关卡1开始
+    resize();
+    setLevel(1);
+    state.lastT = performance.now();
+    state.raf = requestAnimationFrame(loop);
+  }
+
+  // 主循环
   function loop(now) {
+    if (!state.gameActive) return;
     state.raf = requestAnimationFrame(loop);
     const dt = Math.min(48, now - state.lastT);
     state.lastT = now;
@@ -867,10 +927,7 @@
         state.spawnAcc -= 1000;
         spawnNoise();
       }
-      if (state.silence <= 0) {
-        gameOver("寂静已被噪音吞没。");
-        return;
-      }
+      if (state.silence <= 0) gameOver("寂静已被噪音吞没。");
       if (state.l2Timer <= 0) {
         setLevel(3);
         return;
@@ -911,4 +968,109 @@
         state.noiseMult = Math.max(1, state.noiseMult / 2);
         state.legisTimer = 0;
       }
-      if (now > state.nextLegis
+      if (now > state.nextLegislation && !modalRoot.firstElementChild) {
+        showLegislationModal();
+      }
+    }
+
+    if (state.level === 1 || state.level >= 2) {
+      updateEntities(dt);
+    }
+
+    // 绘制
+    ctx.clearRect(0, 0, W, H);
+    if (state.level >= 2) {
+      drawEntities();
+      drawCenter();
+      // 绘制手绘路径（第六关）
+      if (state.level === 6 && state.finaleReady && state.drawPath.length > 1) {
+        ctx.beginPath();
+        ctx.moveTo(state.drawPath[0].x * DPR, state.drawPath[0].y * DPR);
+        for (let i = 1; i < state.drawPath.length; i++) {
+          ctx.lineTo(state.drawPath[i].x * DPR, state.drawPath[i].y * DPR);
+        }
+        ctx.strokeStyle = "#6ecf8e";
+        ctx.lineWidth = 3;
+        ctx.stroke();
+      }
+    }
+    updateHud();
+  }
+
+  // ---------- 游戏开始前的完整说明弹窗 ----------
+  function showIntroModal() {
+    modalRoot.innerHTML = `
+      <div class="modal">
+        <div class="modal-card intro-card">
+          <h3>🌿 寂静之旅 · 六个章节</h3>
+          <ul>
+            <li><strong>一 · 寂静的资源</strong> — 点击林中微光，发现一平方英寸的珍贵。</li>
+            <li><strong>二 · 噪音入侵</strong> — 飞机掠过，守住中央圆圈，拦截红色噪音。</li>
+            <li><strong>三 · 以点带面</strong> — 接纳绿色自然声，光环扩大，噪音减速。</li>
+            <li><strong>四 · 全球寂静</strong> — 消耗分数点亮五块寂静地图。</li>
+            <li><strong>五 · 立法阻挠</strong> — 面对法案，选择游说或承受噪音加剧。</li>
+            <li><strong>六 · 永久保护区</strong> — 满足条件后亲手划定疆域，命名证书。</li>
+          </ul>
+          <p style="font-size:0.7rem">✨ 点击绿色自然声得分，触及红色噪音会降低寂静值。✨</p>
+          <button type="button" class="btn" id="intro-start">开始我的寂静之旅</button>
+        </div>
+      </div>`;
+    document.getElementById("intro-start").onclick = () => {
+      modalRoot.innerHTML = "";
+      resetGame();   // 启动游戏，从关卡一开始
+      // 确保音频在用户手势下启动
+      resumeAudio();
+      setTimeout(() => ambientLoop(), 500);
+    };
+  }
+
+  // 原有开始按钮改为显示说明，避免重复
+  btnStart.onclick = () => {
+    if (state.gameActive) {
+      // 如果已经游戏中，重置并显示说明
+      cancelAnimationFrame(state.raf);
+    }
+    showIntroModal();
+  };
+
+  // 页面加载显示说明
+  window.addEventListener("load", () => {
+    resize();
+    showIntroModal();
+  });
+  window.addEventListener("resize", () => {
+    if (!state.gameActive) resize();
+  });
+  canvas.addEventListener("pointerdown", (e) => {
+    if (state.level === 6 && state.finaleReady) {
+      e.preventDefault();
+      state.drawing = true;
+      const rect = canvas.getBoundingClientRect();
+      state.drawPath = [{ x: e.clientX - rect.left, y: e.clientY - rect.top }];
+      return;
+    }
+    if (state.level >= 2 && state.gameActive) {
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      tryTapWorld(x, y);
+    }
+  });
+  canvas.addEventListener("pointermove", (e) => {
+    if (state.level === 6 && state.drawing) {
+      const rect = canvas.getBoundingClientRect();
+      state.drawPath.push({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+    }
+  });
+  canvas.addEventListener("pointerup", () => {
+    if (state.level === 6 && state.drawing) endDraw();
+    state.drawing = false;
+  });
+  canvas.addEventListener("pointercancel", () => {
+    if (state.level === 6 && state.drawing) endDraw();
+    state.drawing = false;
+  });
+})();
+  </script>
+</body>
+</html>
