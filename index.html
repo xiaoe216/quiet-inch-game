@@ -22,7 +22,6 @@
             padding: 0;
             margin: 0;
         }
-        /* 游戏容器占满全屏，但保留安全区 */
         .game-wrapper {
             background: #1e4a2e;
             width: 100vw;
@@ -41,7 +40,6 @@
             background: #2c5e3a;
             cursor: crosshair;
             touch-action: none;
-            /* 确保canvas内容不变形：宽高比由width/height属性决定，CSS拉伸会变形，但下面我们会动态设置canvas.width/height与CSS实际像素一致 */
         }
         .hud {
             display: flex;
@@ -149,7 +147,7 @@
 <body>
 <div class="game-wrapper">
     <div class="hud">
-        <div class="hud-item">🎧 寂静值 <span id="silenceVal">100</span>%</div>
+        <div class="hud-item">🎧 寂静值 <span id="silenceVal">0</span>%</div>
         <div class="hud-item">⏱️ 倒计时 <span id="timerVal">60</span>s</div>
     </div>
     <canvas id="gameCanvas"></canvas>
@@ -165,7 +163,7 @@
             <p>🔴 <strong>噪音</strong> 飞入中心 → <span style="color:red;">-10 寂静值</span></p>
             <p>🔴 点击噪音 → 成功拦截 (0损失)</p>
         </div>
-        <p>寂静值越高，绿色辐射光圈越大，光圈内噪音减速。<br>倒计时结束寂静值≥100%则胜利。</p>
+        <p>寂静值达到100%后会出现绿色光环，光环内噪音减速。<br>倒计时结束寂静值≥100%则胜利。</p>
         <button class="btn" id="startJourney">🌱 进入寂静之旅</button>
     </div>
 </div>
@@ -175,7 +173,7 @@
     // ----- 画布元素 -----
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
-    let canvasW, canvasH;   // 实际像素尺寸
+    let canvasW, canvasH;
     let centerX, centerY;
     let centerR = 0;
     let itemSize = 0;
@@ -187,7 +185,7 @@
     let foundCount = 0;
     const NEED_LISTEN = 3;
 
-    let silence = 100;
+    let silence = 0;               // 初始为0
     let timeLeft = 60;
     let timerInterval = null;
     let gameActive = false;
@@ -195,31 +193,30 @@
 
     let entities = [];
     let spawnCounter = 0;
-    let SPAWN_DELAY = 45;        // 更慢生成
+    let SPAWN_DELAY = 45;
 
-    // ----- 辅助函数：动态适配尺寸，保证不变形 -----
+    let audioCtx = null;
+    let ambientInterval = null;
+
+    // ----- 辅助函数 -----
     function resizeCanvas() {
-        // 获取父容器实际可用宽高（除去HUD后的剩余区域）
         const wrapper = canvas.parentElement;
         const hud = document.querySelector('.hud');
         const hudHeight = hud ? hud.offsetHeight : 0;
-        const availableHeight = wrapper.clientHeight - hudHeight - 16; // 减去padding
+        const availableHeight = wrapper.clientHeight - hudHeight - 16;
         const availableWidth = wrapper.clientWidth - 16;
-        // 我们希望canvas占满剩余空间，但保持一个合适的宽高比（比如4:3或16:9，但为了竖屏舒适，采用宽高比4:5？）
-        // 实际上我们让canvas填充整个剩余区域，然后所有绘图元素基于canvas实际宽高动态缩放即可，不会变形。
         canvas.width = availableWidth;
         canvas.height = availableHeight;
         canvasW = availableWidth;
         canvasH = availableHeight;
-        // 重新计算中心、半径、图标大小等（相对值）
         centerX = canvasW / 2;
         centerY = canvasH / 2;
-        centerR = Math.min(40, canvasW * 0.09, canvasH * 0.12);
+        // 中心圆放大 1/3 (原 min(40,...) -> 乘以1.33)
+        centerR = Math.min(53, canvasW * 0.12, canvasH * 0.16);
         itemSize = Math.min(36, canvasW * 0.08, canvasH * 0.1);
         maxAura = Math.min(canvasW, canvasH) * 0.65;
     }
 
-    // 监听resize和屏幕旋转
     window.addEventListener('resize', () => {
         resizeCanvas();
         if(gamePhase === 'listen') drawListenMessage();
@@ -273,9 +270,6 @@
         document.body.appendChild(div);
         setTimeout(() => div.remove(), duration);
     }
-
-    let audioCtx = null;
-    let ambientInterval = null;
 
     // ----- 聆听模式 -----
     function initListenMode() {
@@ -368,8 +362,8 @@
 
     // ----- 核心游戏 -----
     function startGameCore() {
-        resizeCanvas();          // 重新适配
-        silence = 100;
+        resizeCanvas();
+        silence = 0;            // 初始寂静值为0
         timeLeft = 60;
         entities = [];
         spawnCounter = 0;
@@ -403,7 +397,6 @@
         const size = itemSize;
         const edge = Math.floor(Math.random()*4);
         let x, y, vx, vy;
-        // 速度极慢，让玩家容易反应
         const speedBase = 0.65 * (canvasW / 400);
         if(edge === 0) { x = -size; y = Math.random() * canvasH; vx = speedBase * 0.6; vy = (centerY - y) * 0.004; }
         else if(edge === 1) { x = canvasW + size; y = Math.random() * canvasH; vx = -speedBase * 0.6; vy = (centerY - y) * 0.004; }
@@ -420,7 +413,7 @@
         for(let i=0; i<entities.length; i++) {
             const e = entities[i];
             let speedMul = 1;
-            // 光环内减速（仅噪音）
+            // 光环仅在寂静值≥100时存在，且半径随寂静值比例扩展
             const auraR = getAuraRadius();
             if(auraR > 0) {
                 const distToCenter = Math.hypot(e.x + e.size/2 - centerX, e.y + e.size/2 - centerY);
@@ -454,13 +447,14 @@
         }
     }
 
-    // 光环半径根据寂静值比例线性计算
+    // 光环半径：寂静值0-100对应0到maxAura*0.7，只有≥100才出现（但半径正比于min(100, silence)/100）
     function getAuraRadius() {
-        let ratio = Math.min(1, Math.max(0, silence / 100));
+        if(silence <= 0) return 0;
+        let ratio = Math.min(1, silence / 100);
         return maxAura * 0.7 * ratio;
     }
 
-    // 绘制实体（噪音红底）
+    // 绘制实体（自然绿底，噪音红底）
     function drawEntity(e) {
         const x = e.x, y = e.y, size = e.size;
         if(e.type === 'noise') {
@@ -472,9 +466,13 @@
             ctx.font = `${size-4}px "Segoe UI Emoji"`;
             ctx.fillText(e.emoji, x + size/2 - 10, y + size/2 + 6);
         } else {
-            ctx.font = `${size}px "Segoe UI Emoji"`;
-            ctx.fillStyle = '#b8e4b0';
-            ctx.fillText(e.emoji, x, y + size/1.5);
+            ctx.beginPath();
+            ctx.arc(x + size/2, y + size/2, size/2, 0, Math.PI*2);
+            ctx.fillStyle = '#2e7d32';
+            ctx.fill();
+            ctx.fillStyle = 'white';
+            ctx.font = `${size-4}px "Segoe UI Emoji"`;
+            ctx.fillText(e.emoji, x + size/2 - 10, y + size/2 + 6);
         }
     }
 
@@ -485,7 +483,7 @@
         const scaleY = canvasH / rect.height;
         const tapX = (clientX - rect.left) * scaleX;
         const tapY = (clientY - rect.top) * scaleY;
-        const hitMargin = 12;   // 宽松点击
+        const hitMargin = 12;
         for(let i=0; i<entities.length; i++) {
             const e = entities[i];
             if(tapX >= e.x - hitMargin && tapX <= e.x + e.size + hitMargin &&
@@ -541,7 +539,7 @@
         gameActive = false;
         gamePhase = 'listen';
         entities = [];
-        silence = 100;
+        silence = 0;
         timeLeft = 60;
         updateUI();
         initListenMode();
@@ -549,15 +547,13 @@
 
     function drawGame() {
         ctx.clearRect(0,0,canvasW,canvasH);
-        // 背景
         const grad = ctx.createLinearGradient(0,0,0,canvasH);
         grad.addColorStop(0,"#1e4a2e");
         grad.addColorStop(1,"#0e2a1f");
         ctx.fillStyle = grad;
         ctx.fillRect(0,0,canvasW,canvasH);
-        // 实体
         for(const e of entities) drawEntity(e);
-        // 中心圆
+        // 中心圆（已放大）
         ctx.beginPath();
         ctx.arc(centerX, centerY, centerR, 0, Math.PI*2);
         ctx.fillStyle = "#f9efc0";
@@ -566,9 +562,9 @@
         ctx.lineWidth = 2.5;
         ctx.stroke();
         ctx.fillStyle = "#1e3a2a";
-        ctx.font = `bold ${Math.max(16, centerR*0.6)}px system-ui`;
+        ctx.font = `bold ${Math.max(16, centerR*0.55)}px system-ui`;
         ctx.fillText("🌿", centerX-12, centerY+6);
-        // 光环
+        // 光环（寂静值≥100才显示半径>0）
         const auraR = getAuraRadius();
         if(auraR > 5) {
             ctx.beginPath();
@@ -631,7 +627,6 @@
         if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
     };
 
-    // 初始调用
     resizeCanvas();
 })();
 </script>
