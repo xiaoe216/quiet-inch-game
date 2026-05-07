@@ -158,9 +158,9 @@
     <div class="card">
         <h1>🌿 守护一平方英寸的寂静</h1>
         <div class="rule-line">
-            <p>🟢 <strong>自然声</strong> 飞入中心 → <span style="color:green;">+10 寂静值</span></p>
+            <p>🟢 <strong>自然声</strong> 飞入中心 → <span style="color:green;">+12 寂静值</span></p>
             <p>🟢 误触自然声 → <span style="color:red;">-1 寂静值</span></p>
-            <p>🔴 <strong>噪音</strong> 飞入中心 → <span style="color:red;">-10 寂静值</span></p>
+            <p>🔴 <strong>噪音</strong> 飞入中心 → <span style="color:red;">-8 寂静值</span></p>
             <p>🔴 点击噪音 → 成功拦截 (0损失)</p>
         </div>
         <p>寂静值达到100%后会出现绿色光环，光环内噪音减速。<br>倒计时结束寂静值≥100%则胜利。</p>
@@ -185,7 +185,7 @@
     let foundCount = 0;
     const NEED_LISTEN = 3;
 
-    let silence = 0;               // 初始为0
+    let silence = 0;
     let timeLeft = 60;
     let timerInterval = null;
     let gameActive = false;
@@ -211,7 +211,6 @@
         canvasH = availableHeight;
         centerX = canvasW / 2;
         centerY = canvasH / 2;
-        // 中心圆放大 1/3 (原 min(40,...) -> 乘以1.33)
         centerR = Math.min(53, canvasW * 0.12, canvasH * 0.16);
         itemSize = Math.min(36, canvasW * 0.08, canvasH * 0.1);
         maxAura = Math.min(canvasW, canvasH) * 0.65;
@@ -363,7 +362,7 @@
     // ----- 核心游戏 -----
     function startGameCore() {
         resizeCanvas();
-        silence = 0;            // 初始寂静值为0
+        silence = 0;
         timeLeft = 60;
         entities = [];
         spawnCounter = 0;
@@ -390,7 +389,8 @@
 
     function spawnEntity() {
         if(!gameActive) return;
-        const isNatural = Math.random() < 0.55;
+        // 自然声概率提升至 70%
+        const isNatural = Math.random() < 0.70;
         const emoji = isNatural ?
             ['🐦','🦋','🌿','💧','🍃'][Math.floor(Math.random()*5)] :
             ['✈️','📱','🚗','🔊','🏗️'][Math.floor(Math.random()*5)];
@@ -413,7 +413,6 @@
         for(let i=0; i<entities.length; i++) {
             const e = entities[i];
             let speedMul = 1;
-            // 光环仅在寂静值≥100时存在，且半径随寂静值比例扩展
             const auraR = getAuraRadius();
             if(auraR > 0) {
                 const distToCenter = Math.hypot(e.x + e.size/2 - centerX, e.y + e.size/2 - centerY);
@@ -426,13 +425,13 @@
             const dist = Math.hypot(e.x + e.size/2 - centerX, e.y + e.size/2 - centerY);
             if(dist < hitDist) {
                 if(e.type === 'natural') {
-                    silence = Math.min(100, silence + 10);
+                    silence = Math.min(100, silence + 12);  // +12
                     playSound(880, 0.2, 0.2);
-                    showToast('🌿 自然之声 +10', 600);
+                    showToast('🌿 自然之声 +12', 600);
                 } else {
-                    silence = Math.max(0, silence - 10);
+                    silence = Math.max(0, silence - 8);      // -8
                     playSound(140, 0.25, 0.3);
-                    showToast('💥 噪音污染 -10', 600);
+                    showToast('💥 噪音污染 -8', 600);
                     if(silence <= 0) endGame(false);
                 }
                 updateUI();
@@ -447,14 +446,12 @@
         }
     }
 
-    // 光环半径：寂静值0-100对应0到maxAura*0.7，只有≥100才出现（但半径正比于min(100, silence)/100）
     function getAuraRadius() {
         if(silence <= 0) return 0;
         let ratio = Math.min(1, silence / 100);
         return maxAura * 0.7 * ratio;
     }
 
-    // 绘制实体（自然绿底，噪音红底）
     function drawEntity(e) {
         const x = e.x, y = e.y, size = e.size;
         if(e.type === 'noise') {
@@ -553,7 +550,6 @@
         ctx.fillStyle = grad;
         ctx.fillRect(0,0,canvasW,canvasH);
         for(const e of entities) drawEntity(e);
-        // 中心圆（已放大）
         ctx.beginPath();
         ctx.arc(centerX, centerY, centerR, 0, Math.PI*2);
         ctx.fillStyle = "#f9efc0";
@@ -564,7 +560,6 @@
         ctx.fillStyle = "#1e3a2a";
         ctx.font = `bold ${Math.max(16, centerR*0.55)}px system-ui`;
         ctx.fillText("🌿", centerX-12, centerY+6);
-        // 光环（寂静值≥100才显示半径>0）
         const auraR = getAuraRadius();
         if(auraR > 5) {
             ctx.beginPath();
